@@ -1,0 +1,80 @@
+{% extends 'staff/page.html' %}
+
+{% block content %}
+
+<h1 style="text-align: center"> {{ title|upper }} ({{ films_count}}) </h1>
+
+<ul class="list-products">
+
+    {% for film in films %}
+        <li>
+            <div class="product-panel">
+                <p class="first">
+                    #{{ film.pk }}
+                </p>
+            </div>
+
+            <div class="film-list">
+
+                <div class="poster-box">
+                    {% if film.poster %}
+                        <img class="img-product-left film" src="{{film.poster.url}}">
+                    {% endif %}
+                </div>
+
+                <div class="showtime-info ">
+                    <h3>{{ film.name }}</h3>
+
+                    <h4><span class="blue-edit">DURATION:</span><br>{{ film.duration }}</h4>
+                    <h4><span class="blue-edit">DIRECTOR:</span><br>{{ film.director }}</h4>
+                    <h4><span class="blue-edit">CAST:</span><br>{{ film.starring }}</h4>
+                    <h4><span class="blue-edit">DESCRIPTION:</span><br>{{ film.description|truncatewords:20 }}</h4>
+
+                   <p class="link-buy-product edit">
+                        <a href="{% url 'edit-film' film.pk %}">
+                            Edit film info
+                        </a>
+                   </p>
+               </div>
+
+               <div class="clear"></div>
+           </div>
+
+           </div>
+        </li>
+    {% empty %}
+        <h3 style="text-align: center">No showtime yet</h3>
+    {% endfor %}
+
+</ul>
+
+        <!-- pagination -->
+        {% if page_obj.has_other_pages %}
+            <nav class="list-pages">
+                <ul>
+                    {% if page_obj.has_previous %}
+                        <li class="page-num">
+                            <a href="?page={{ page_obj.previous_page_number }}">&lt</a>
+                        </li>
+                    {% endif %}
+
+                    {% for p in paginator.page_range %}
+                        {% if page_obj.number == p %}
+                            <li class="page-num page-num-selected">{{ p }}</li>
+                        {% elif p >= page_obj.number|add:-2 and p <= page_obj.number|add:2 %}
+                            <li class="page-num">
+                                <a href="?page={{ p }}">{{ p }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-num">
+                            <a href="?page={{ page_obj.next_page_number }}">&gt</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+
+{% endblock %}

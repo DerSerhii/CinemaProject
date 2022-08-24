@@ -1,0 +1,21 @@
+{% if messages %}
+
+    {% for message in messages %}
+        <div id="message" class="msg-outer">
+            <div class="msg-inner">
+                {{ message }}
+            </div>
+        </div>
+
+    {% endfor %}
+
+{% endif %}
+
+
+<script>
+
+    setTimeout(function(){
+        document.getElementById('message').style.display = 'none';
+    }, 2000); // 1000ms = 1 sec
+
+</script>
