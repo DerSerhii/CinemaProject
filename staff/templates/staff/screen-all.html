@@ -1,0 +1,53 @@
+{% extends 'staff/page.html' %}
+
+{% block content %}
+
+<ul class="list-products">
+
+    {% for sw in showtimes %}
+        <li>
+            <div class="product-panel">
+                <p class="first">
+                    {{ sw.time_start|time:"H:i"}} - {{sw.date|date:"D j N"}}
+                </p>
+                <p class="last">
+                    Screen: <span style="color:{{ sw.screen }}"> {{ sw.screen|title }} </span>
+                </p>
+            </div>
+
+            <div class="film-list">
+
+                <div class="poster-box">
+                    {% if sw.film.poster %}
+                        <img class="img-product-left thumb" src="{{sw.film.poster.url}}">
+                    {% endif %}
+                </div>
+
+                <div class="showtime-info">
+                    <h3>{{ sw.film.name }}</h3>
+
+                    <h4>Ticket price: {{ sw.price }} ₴</h4>
+                    <h4>Attendance: {{ sw.attendance }} /{{ sw.screen.capacity }}</h4>
+                    <h4>Duration: {{ sw.film.duration }}</h4>
+                </div>
+
+                <div class="showtime-info">
+                   <p class="link-buy-product edit">
+                        <a href="{% url 'edit-showtime' sw.pk %}">
+                            Edit showtime
+                        </a>
+                   </p>
+               </div>
+
+               <div class="clear"></div>
+           </div>
+
+           </div>
+        </li>
+    {% empty %}
+        <h3 style="text-align: center">No showtime yet</h3>
+    {% endfor %}
+
+</ul>
+
+{% endblock %}

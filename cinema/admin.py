@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from cinema.models import Spectator
+from cinema.models import Spectator, ScreenCinema, Film, Showtime
 
 
 class SpectatorAdmin(admin.ModelAdmin):
@@ -10,3 +10,6 @@ class SpectatorAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Spectator, SpectatorAdmin)
+admin.site.register(ScreenCinema)
+admin.site.register(Film)
+admin.site.register(Showtime)

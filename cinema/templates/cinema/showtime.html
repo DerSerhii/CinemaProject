@@ -1,0 +1,112 @@
+{% extends 'cinema/page.html' %}
+
+{% block content %}
+
+<section class="wrapper">
+
+    <hr class="hr-gradient">
+
+    <div class="film-list">
+
+        {# POSTER LEFT#}
+        <div class="poster-box">
+            {% if showtime.film.poster %}
+            <img src="{{showtime.film.poster.url}}" alt="Poster">
+            {% endif %}
+        </div>
+
+       {# FILM INFO #}
+        <div class="showtime-info">
+            <div>
+                <h3>Showtime - {{ showtime.date|date:"D j M" }} - {{ showtime.time_start|time:"H:i" }}</h3>
+
+                <h2>{{ showtime.film.name|upper }}</h2>
+
+                <p>
+                    {{ showtime.film.description|linebreaks }}
+                </p>
+                <p>
+                    <span class="bold-800">
+                        DIRECTORS
+                    </span>
+                    <br>
+                    {{ showtime.film.director }}
+                </p>
+                <p>
+                    <span class="bold-800">
+                        CAST
+                    </span>
+                    <br>
+                    {{ showtime.film.starring }}
+                </p>
+                <p>
+                    <span class="bold-800">
+                        DURATION -
+                    </span>
+                    <span class="duration">
+                        {{ showtime.film.duration }}
+                    </span>
+                </p>
+            </div>
+
+            {# SCREEN & TICKET BOX #}
+            <div class="screen-ticket-box">
+
+                {# SCREEN BOX #}
+                <div class="screen">
+                    <h4 style="color:{{ showtime.screen.name }}">
+                        SCREEN {{ showtime.screen|upper }}
+                    </h4>
+
+                    <p>
+                        TOTAL CINEMA CAPACITY -
+                        <span class="duration">
+                            {{ showtime.screen.capacity }}
+                        </span>
+                    </p>
+                    <p>
+                        FREE SEATS -
+                        <span class="duration">
+                            {{ free_seats }}
+                        </span>
+                    </p>
+                </div>
+
+                {# TICKET BOX #}
+                {% if free_seats %}
+                <div class="ticket">
+                    <h4>
+                        Ticket price:<span class="yellow"> ₴ {{ showtime.price }}</span>
+                    </h4>
+
+                    <form method="post" action="{% url 'buy-ticket' showtime.id %}">
+                        {% csrf_token %}
+
+                        {% with buy_form as f%}
+                        <p class="q-label">
+                            <label for="{{ f.id_for_label }}">{{ f.label }}</label>
+                            {{ f }}
+                        </p>
+
+                        <div class="form-error">{{ f.errors }}</div>
+
+                        <button type="submit" class="ticket-button">
+                            Buy it now
+                        </button>
+                        {% endwith %}
+                    </form>
+                </div>
+                {% else %}
+                <div class="ticket">
+                     <h4 style="color:red">
+                         SOLD OUT, SORRY :(
+                    </h4>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</section>
+
+{% endblock %}

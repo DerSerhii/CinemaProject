@@ -1,0 +1,44 @@
+<header>
+    <nav class="navbar">
+        <div class="container">
+
+            {# LEFT PART OF THE HEADER #}
+            <a class="navbar-icon" href="{% url 'screen-showtime' 0 %}">
+                <span class="text-1">ADMIN</span>
+                <span class="text-2">cinema</span>
+            </a>
+
+            {# CENTRAL PART OF THE HEADER #}
+            <div class="navbar-info">
+                <p class="ml-auto" >
+                    <a class="navbar-link pad-link" href="{% url 'screen-showtime' 0 %}">
+                        Schedule
+                    </a>
+                    <a class="navbar-link pad-link" href="{% url 'film' %}">
+                        Films
+                    </a>
+                </p>
+
+                {# RIGHT PART OF THE HEADER #}
+                <ul class="navbar-right ml-auto">
+
+                    <li class="pad-link">
+                        <a class="navbar-link" href="#">
+                            Admin:
+                            <span class="blue">{{ user.username }}</span>
+                        </a>
+                    </li>
+
+                    <li class="pad-link">
+                        <a class="navbar-link" href="{% url 'sign-out' %}">
+                            Sign out
+                        </a>
+                    </li>
+
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+
+</header>

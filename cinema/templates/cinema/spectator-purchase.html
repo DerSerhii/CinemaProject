@@ -1,0 +1,60 @@
+{% extends 'cinema/page.html' %}
+
+{% block content %}
+
+<section class="wrapper w-ticket">
+
+<h2 class="header-ticket"> Total number of visits - {{ visit }}</h2>
+<h2 class="header-ticket"> Total number of tickets purchased - {{ ticket }}</h2>
+<h2 class="header-ticket"> Total money spent - {{ sum_money }} ₴</h2>
+
+<h3 class="header-ticket"> HISTORY VISITS: </h3>
+
+    <ul class="list-products">
+
+    {% for pur in purchases %}
+        <li>
+            <div class="product-panel">
+                <p class="first">
+                    Date Purchase: {{ pur.time_purchase }}
+                </p>
+            </div>
+
+            <div class="film-list">
+
+                <div class="poster-box-ticket">
+                    {% if pur.showtime.film.poster %}
+                        <img class="img-product-left film" src="{{pur.showtime.film.poster.url}}">
+                    {% endif %}
+                </div>
+
+                <div class="showtime-info ">
+                    <h3>{{ pur.showtime.film.name }}</h3>
+
+                    <h4><span class="blue-edit">Visit Date:</span> {{ pur.showtime.date }}</h4>
+                    <br>
+                    <h4><span class="blue-edit">
+                        Visit Time:</span> {{ pur.showtime.time_start }}</h4>
+                    <br>
+                    <h4><span class="blue-edit">Price Ticket:</span>
+                        <br>
+                        {{ pur.quantity }} x {{  pur.showtime.price }} =
+                        {% widthratio pur.quantity 1 pur.showtime.price %} ₴
+                    </h4>
+
+               </div>
+
+               <div class="clear"></div>
+           </div>
+
+           </div>
+        </li>
+    {% empty %}
+        <h3 style="text-align: center">No purchases yet</h3>
+    {% endfor %}
+
+</ul>
+
+</section>
+
+{% endblock %}

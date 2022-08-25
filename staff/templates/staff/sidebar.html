@@ -1,0 +1,38 @@
+<ul class="sidebar">
+    <li class="create-screen">
+        <a href="{% url 'add-showtime' %}"> + create showtime</a>
+    </li>
+    <li class="create-screen">
+        <a href="{% url 'add-film' %}"> + create films</a>
+    </li>
+    <li class="create-screen">
+        <a href="{% url 'add-screen' %}"> + create screens</a>
+    </li>
+
+    <hr>
+
+    {% if screen_selected == 0 %}
+        <li class="selected">All screens ({{ screens_all }})</li>
+
+    {% else %}
+        <li><a href="{% url 'screen-showtime' 0 %}">All screens ({{ screens_all }})</a></li>
+    {% endif %}
+
+    {% for scr in screens %}
+        {% if scr.pk == screen_selected %}
+            <li class="selected">
+                <span style="color:{{ scr.name }}">
+                    {{scr.name|title}} ({{scr.count}})
+                </span>
+                <br>
+                <a href="{% url 'edit-screen' scr.pk %}">[edit this screen]</a>
+            </li>
+        {% else %}
+            <li>
+                <a href="{% url 'screen-showtime' scr.pk %}" style="color:{{ scr.name }}">
+                    {{scr.name|title}} ({{scr.count}})
+                 </a>
+            </li>
+        {% endif %}
+    {% endfor %}
+</ul>

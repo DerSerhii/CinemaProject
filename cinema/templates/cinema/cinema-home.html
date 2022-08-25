@@ -1,0 +1,92 @@
+{% extends 'cinema/page.html' %}
+
+{% block content %}
+
+    {% include 'cinema/day-boxes.html' %}
+
+    <section class="wrapper">
+
+        {% for sw in showtime %}
+        {% if sw.0 %}
+
+        <hr class="hr-gradient">
+
+            <div class="film-list">
+
+                <div class="poster-box">
+                    {% if sw.0.film.poster %}
+                    <img src="{{sw.0.film.poster.url}}" alt="Poster">
+                    {% endif %}
+                </div>
+
+                <div class="showtime-info">
+                    <div>
+                        <h2>{{ sw.0.film.name }}</h2>
+
+                        <p>{{ sw.0.film.description|linebreaks|truncatewords:60 }}</p>
+
+                        <p>
+                            <span class="bold-800">
+                                DIRECTORS
+                            </span>
+                            <br>
+                            {{ sw.0.film.director }}
+                        </p>
+
+                        <p>
+                            <span class="bold-800">
+                                CAST
+                            </span>
+                            <br>
+                            {{ sw.0.film.starring }}
+                        </p>
+
+                        <p>
+                            <span class="bold-800">
+                                ALL SHOWTIMES
+                            </span>
+                        </p>
+                    </div>
+
+                    <div class="showtime-list">
+                        <ul class="showtime-list__list">
+
+                            {% for event in sw %}
+                                <li class="showtime-list__item">
+                                    <div class="showtime-list__button-wrapper">
+                                        <a class="v-link showtime-list-button" href="{% url 'showtime' event.id %}">
+                                            <div class="showtime-list-button__detail-wrapper">
+                                                <div class="showtime-list-button__detail-start-time-wrapper">
+                                                    <time class="showtime-list-button__detail-start-time">
+                                                        {{ event.time_start|time:"H:i" }}
+                                                    </time>
+                                                    <div class="showtime-list-button__screen-name">
+                                                        Screen: {{ event.screen}}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </div>
+                                </li>
+                            {% endfor %}
+
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+
+        {% endif %}
+        {% empty %}
+
+            <hr class="hr-gradient">
+
+            <div class="empty-info">
+                <h1> No showtime on this day :( </h1>
+            </div>
+
+        {% endfor %}
+
+    </section>
+
+{% endblock %}

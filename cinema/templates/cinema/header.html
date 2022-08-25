@@ -1,0 +1,63 @@
+<header>
+
+    <nav class="navbar">
+        <div class="container">
+
+            {# LEFT PART OF THE HEADER #}
+            <a class="navbar-icon" href="{% url 'cinema-home' %}">
+                <span class="text-1">MY</span>
+                <span class="text-2">cinema</span>
+            </a>
+
+            {# CENTRAL PART OF THE HEADER #}
+            <div class="navbar-info">
+                <p class="ml-auto" >
+                    <a class="navbar-link pad-link" href="{% url 'cinema-home' %}">
+                        Schedule
+                    </a>
+                    <a class="navbar-link pad-link" href="{% url 'purchase' %}">
+                        My purchases
+                    </a>
+                </p>
+
+                {# RIGHT PART OF THE HEADER #}
+                <ul class="navbar-right ml-auto">
+
+                    {% if user.is_authenticated %}
+                        <li class="pad-link">
+                            <a class="navbar-link" href="{% url 'wallet' user.id %}">
+                                Wallet:
+                                <span class="blue">₴{{ user.wallet }}</span>
+                            </a>
+                        </li>
+                        <li class="pad-link">
+                            <a class="navbar-link" href="{% url 'profile' user.id %}">
+                                Profile:
+                                <span class="blue">{{ user.username }}</span>
+                            </a>
+                        </li>
+                        <li class="pad-link">
+                            <a class="navbar-link" href="{% url 'sign-out' %}">
+                                Sign out
+                            </a>
+                        </li>
+
+                    {% else %}
+                        <li class="pad-link">
+                            <a class="navbar-link" href="{% url 'sign-in' %}">
+                                Sign in
+                            </a>
+                        </li>
+                        <li class="pad-link">
+                            <a class="navbar-link" href="{% url 'sign-up' %}">
+                                Sign up
+                            </a>
+                        </li>
+                    {% endif %}
+
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+</header>

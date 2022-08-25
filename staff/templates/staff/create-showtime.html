@@ -1,0 +1,42 @@
+{% extends 'staff/page.html' %}
+
+{% block content %}
+
+<section>
+    <div class="sign-form">
+
+            <div class="edit-panel">
+                <p class="first">
+                    {{ title|upper }}
+                </p>
+            </div>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-error">
+                {{ form.non_field_errors }}
+            </div>
+
+            {% for f in form %}
+                <p class="form-input">
+                    <label class="form-label" for="{{ f.id_for_label }}">
+                        {{ f.label }}
+                    </label>
+
+                    {{ f }}
+                </p>
+
+                <div class="form-error">
+                    {{ f.errors }}
+                </div>
+            {% endfor %}
+
+            <button type="submit" class="form-button">
+                {{ title|title }}
+            </button>
+        </form>
+    </div>
+</section>
+
+{% endblock %}
