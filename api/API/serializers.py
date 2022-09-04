@@ -38,7 +38,10 @@ class SpectatorSerializer(serializers.ModelSerializer):
         return customer
 
 
-class ShowtimeViewSerializers(serializers.ModelSerializer):
+class ShowtimeSerializers(serializers.ModelSerializer):
+    film = serializers.CharField(source="film.name", read_only=True)
+    screen = serializers.CharField(source="screen.name", read_only=True)
+
     class Meta:
         model = Showtime
         fields = "__all__"

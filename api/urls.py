@@ -2,11 +2,11 @@ from django.urls import path, include
 from rest_framework import routers
 from rest_framework.authtoken import views
 
-from api.API.resources import ScreenCinemaViewSet
-
+from api.API.resources import ScreenCinemaViewSet, ShowtimeViewSet
 
 router = routers.SimpleRouter()
-router.register('screen-cinema', ScreenCinemaViewSet)
+router.register(r'screen-cinema', ScreenCinemaViewSet)
+router.register(r'showtime', ShowtimeViewSet)
 
 
 urlpatterns = [
