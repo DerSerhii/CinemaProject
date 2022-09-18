@@ -138,7 +138,7 @@ MEDIA_URL = '/media/'
 
 AUTH_USER_MODEL = 'cinema.Spectator'
 
-TECHNICAL_BREAK_BETWEEN_SESSIONS = dt.timedelta(minutes=30)
+TECHNICAL_BREAK_BETWEEN_SHOWTIME = dt.timedelta(minutes=30)
 
 PERIOD_OF_INACTIVITY_BEFORE_LOGOUT = dt.timedelta(minutes=10)
 

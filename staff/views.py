@@ -86,7 +86,7 @@ class RemoveFilmView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
         except ProtectedError:
             error_message = \
                     "The film <%s> can't be deleted because it's in rental" \
-                % self.object.name
+                    % self.object.name
             messages.error(self.request, error_message)
             return HttpResponseRedirect(
                 reverse("edit-film", kwargs={"film_id": self.kwargs["film_id"]}))

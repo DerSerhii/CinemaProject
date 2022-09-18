@@ -11,8 +11,7 @@ class Spectator(AbstractUser):
     wallet = models.DecimalField(default=0,
                                  max_digits=6, decimal_places=2,
                                  verbose_name=_("Top up your account"),
-                                 validators=[MinValueValidator(0)]
-                                 )
+                                 validators=[MinValueValidator(0)])
     
     class Meta:
         verbose_name = _("Spectator")

@@ -12,25 +12,38 @@ from diploma import settings
 def get_time_end_showtime(time_start, duration):
     time_end = (dt.datetime.combine(dt.date(1, 1, 1), time_start)
                 + duration
-                + settings.TECHNICAL_BREAK_BETWEEN_SESSIONS
+                + settings.TECHNICAL_BREAK_BETWEEN_SHOWTIME
                 ).time()
     return time_end
 
 
-def get_overlapping_showtime(time_start, date, date_end, screen):
-    max_duration = Film.objects.aggregate(Max("duration"))["duration__max"]
-    time_end = get_time_end_showtime(time_start, max_duration)
+def get_overlapping_showtime(data):
+    """
+
+    """
+    # max_duration = Film.objects.aggregate(Max("duration"))["duration__max"]
+
+    date_start = data['date_start']
+    date_end = data['date_end']
+    screen = data['screen']
+    film = data['film']
+    time_start = data['time_start']
+    time_end = get_time_end_showtime(time_start, film.duration)
+    print(time_end)
 
     if time_start > time_end:
         time_end = dt.time(23, 59)
 
-    q_date = Q(date__range=(date - dt.timedelta(1), date_end))
+    q_date = Q(date__range=(date_start - dt.timedelta(1), date_end))
+    print(q_date)
     q_time_start = Q(time_start__range=(time_start, time_end))
     q_time_end = Q(time_end__range=(time_start, time_end))
     q_screen = Q(screen=screen)
     q_filter = q_date & (q_time_start | q_time_end) & q_screen
+
+    overlapping_showtime = Showtime.objects.filter(q_filter)
     
-    return Showtime.objects.filter(q_filter)
+    return overlapping_showtime.first()
 
 
 class ScreenField(forms.CharField):
@@ -48,23 +61,49 @@ class ScreenForm(forms.ModelForm):
 
 
 class ShowtimeForm(forms.ModelForm):
-    date = forms.DateField(widget=forms.SelectDateWidget,
-                           initial=tz.localtime(tz.now()).date(),
-                           label=_('Showtime date start'))
+    date_start = forms.DateField(widget=forms.SelectDateWidget,
+                                 initial=tz.localtime(tz.now()).date(),
+                                 label=_('Showtime date start'))
     date_end = forms.DateField(widget=forms.SelectDateWidget,
                                initial=tz.localtime(tz.now()).date(),
                                label=_('Showtime date end'))
 
     class Meta:
         model = Showtime
-        fields = ("date", "date_end", "time_start", "film", "screen", "price")
+        fields = ['date_start', 'date_end', 'time_start', 'film', 'screen', 'price']
     
+    def clean(self):
+        cleaned_data = super().clean()
+        date_start = cleaned_data['date_start']
+        date_end = cleaned_data['date_end']
+
+        # check Start date
+        if date_start < tz.localtime(tz.now()).date():
+            raise forms.ValidationError(
+                'ATTENTION: Unable to create a showtime in the past'
+            )
+
+        # check End date
+        if date_start > date_end:
+            raise forms.ValidationError(
+                "ATTENTION: END DATE can't be earlier than START DATE"
+            )
+
+        overlapping_showtime = get_overlapping_showtime(cleaned_data)
+        if overlapping_showtime:
+            raise forms.ValidationError(
+                f'ATTENTION: Showtime overlay {overlapping_showtime}'
+            )
+
     def save(self, commit=True):
         form = super().save(commit=False)
-        
-        period = (self.cleaned_data["date_end"] - form.date).days
+
+        form.date = self.cleaned_data['date_start']
+        date_end = self.cleaned_data['date_end']
+
+        period = (date_end - form.date).days
         time_end = get_time_end_showtime(form.time_start, form.film.duration)
-        
+
         bulk_list = list()
         for i in range(-1, period):
             bulk_list.append(
@@ -79,22 +118,8 @@ class ShowtimeForm(forms.ModelForm):
             )
         if commit:
             Showtime.objects.bulk_create(bulk_list)
-        
+
         return form
-    
-    def clean(self):
-        cleaned_data = super().clean()
-        screen = cleaned_data["screen"]
-        date = cleaned_data["date"]
-        date_end = cleaned_data["date_end"]
-        time_start = cleaned_data["time_start"]
-
-        if date > date_end:
-            raise forms.ValidationError("End date cannot be less than Start date")
-
-        overlapping_showtime = get_overlapping_showtime(time_start, date, date_end, screen)
-        if overlapping_showtime:
-            raise forms.ValidationError("Showtime overlay")
 
 
 class ShowtimeEditForm(forms.ModelForm):
