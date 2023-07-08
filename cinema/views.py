@@ -54,14 +54,14 @@ class CinemaHomeView(TemplateView):
 
         # get films on this day
         query_film_on_this_day = \
-            Showtime.objects.values("film").filter(date=select_day).distinct()
+            Showtime.objects.values("film").filter(start=select_day).distinct()
 
         list_film_id_on_this_day = [i.get("film") for i in query_film_on_this_day]
 
         # get films with showtimes on this day
         films_with_showtime_on_this_day = []
 
-        q_select_day = Q(date=select_day)
+        q_select_day = Q(start=select_day)
         q_time_start_gte_now = Q(time_start__gte=tz.localtime(tz.now()).time())
 
         if select_day == tz.localtime(tz.now()).date():

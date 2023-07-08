@@ -2,9 +2,10 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone as tz
 from django.utils.translation import gettext as _
 
-from diploma import settings
+from cinema_project import settings
 
 
 class Spectator(AbstractUser):
@@ -58,9 +59,8 @@ class Film(models.Model):
 
 
 class Showtime(models.Model):
-    date = models.DateField(verbose_name=_("Showtime date"))
-    time_start = models.TimeField(verbose_name=_("Showtime start time"))
-    time_end = models.TimeField(verbose_name=_("Showtime end time"))
+    start = models.DateTimeField(verbose_name=_("Showtime start time"))
+    end = models.DateTimeField(verbose_name=_("Showtime end time"))
     screen = models.ForeignKey(ScreenCinema, on_delete=models.PROTECT, verbose_name=_("Screen"))
     film = models.ForeignKey(Film, on_delete=models.PROTECT, verbose_name=_("Film"))
     price = models.DecimalField(default=1, max_digits=5, decimal_places=2,
@@ -71,10 +71,10 @@ class Showtime(models.Model):
     class Meta:
         verbose_name = _("Showtime")
         verbose_name_plural = _("Showtimes")
-        ordering = ("date",)
+        ordering = ("start",)
 
     def __str__(self):
-        return f"{self.date}-{self.time_start} <{self.film}>"
+        return f'{tz.localtime(self.start).strftime("%d/%m %H:%M")} <{self.film}>'
 
 
 class Ticket(models.Model):

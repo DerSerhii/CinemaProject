@@ -57,11 +57,12 @@ class ShowtimeStaffSerializers(serializers.ModelSerializer):
         fields = ['date_start', 'date_end', 'time_start', 'film', 'screen', 'price']
 
     def validate(self, data):
-        date_start = data.get('date_start', tz.localtime(tz.now()).date())
-        time_start = data['time_start']
-        time_end = data['time_end']
         screen = data['screen']
-        date_end = data['date_end']
+        film = data['film']
+        date_start = data.get('date_start',
+                              tz.localtime().date())  # obj: datatime.date
+        date_end = data['date_end']  # obj: datatime.date
+        time_start = data['time_start']  # obj: datatime.time
 
         # check Start date
         if date_start < tz.localtime(tz.now()).date():

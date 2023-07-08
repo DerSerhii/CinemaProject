@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime as dt
 
 from django.db.models import Q
 from django.utils import timezone as tz
@@ -6,17 +6,14 @@ from django.utils import timezone as tz
 from cinema.models import Showtime, Film
 
 
-def get_selected_day(query_date_str):
+def get_selected_day(query_date: str) -> dt.datetime:
     """
-    Return selected day 'datetime.date'
-    from template or today if start page
+    Return selected day from template or today if start page
     """
-    
-    if query_date_str:
-        showtime_day = datetime.strptime(query_date_str, "%m/%d/%Y").date()
-        print(type(showtime_day))
+    if query_date:
+        showtime_day = dt.datetime.strptime(query_date, "%m/%d/%Y")
     else:
-        showtime_day = tz.localtime(tz.now()).date()
+        showtime_day = tz.localtime(tz.now())
     
     return showtime_day
 

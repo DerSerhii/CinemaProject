@@ -3,7 +3,7 @@ from django.utils import timezone as tz
 from django.utils.deprecation import MiddlewareMixin
 from django.core.cache import cache
 
-from diploma.settings import PERIOD_OF_INACTIVITY_BEFORE_LOGOUT
+from cinema_project.settings import PERIOD_OF_INACTIVITY_BEFORE_LOGOUT
 
 
 class LogoutWithoutUserActivityMiddleware(MiddlewareMixin):

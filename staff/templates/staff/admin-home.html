@@ -6,11 +6,11 @@
 
 <ul class="list-products">
 
-    {% for sw in showtimes %}
+    {% for sw in showtime %}
         <li>
             <div class="product-panel">
                 <p class="first">
-                    {{ sw.time_start|time:"H:i"}} - {{sw.date|date:"D j N"}}
+                    {{ sw.start|time:"H:i"}} - {{sw.start|date:"D j N"}}
                 </p>
                 <p class="last">
                     Screen: <span style="color:{{ sw.screen }}"> {{ sw.screen|title }} </span>

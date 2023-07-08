@@ -102,62 +102,6 @@ class ScreenShowtimeAllView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         return self.request.user.is_superuser
 
 
-class ScreenShowtimeView(LoginRequiredMixin, UserPassesTestMixin, ListView):
-    template_name = 'staff/admin-home.html'
-    context_object_name = 'showtimes'
-    login_url = reverse_lazy("sign-in")
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.select_day = None
-        self.screen_id = None
-
-    def test_func(self):
-        return self.request.user.is_superuser
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        context["day_selected"] = self.select_day
-        # context["showtime"] = select_show.get_films_with_showtimes_on_this_day(self.select_day)
-        context['screen_selected'] = self.screen_id
-
-        filter_date = Q(showtime__date=self.select_day)
-        filter_time_start = Q(showtime__time_start__gte=tz.localtime(tz.now()).time())
-        filter_date_all = Q(date=self.select_day)
-        filter_time_start_all = Q(time_start__gte=tz.localtime(tz.now()).time())
-
-        if self.select_day == tz.localtime(tz.now()).date():
-            showtime = Count('showtime', filter=filter_date & filter_time_start)
-            showtime_all = filter_date_all & filter_time_start_all
-        else:
-            showtime = Count('showtime', filter=filter_date)
-            showtime_all = filter_date_all
-        
-        context['screens'] = ScreenCinema.objects.annotate(count=showtime)
-        context['screens_all'] = Showtime.objects.filter(showtime_all).count()
-
-        return context
-
-    def get_queryset(self):
-        query_date_str = self.request.GET.get("day")
-        self.select_day = select_show.get_selected_day(query_date_str)
-        self.screen_id = self.kwargs["scr_id"]
-
-        screen_filter = Q(screen=self.screen_id)
-        day_filter = Q(date=self.select_day)
-        q_time_start_gte_now = Q(time_start__gte=tz.localtime(tz.now()).time())
-
-        sw_filter = screen_filter & day_filter if self.screen_id else day_filter
-
-        if self.select_day == tz.localtime(tz.now()).date():
-            q_filter = sw_filter & q_time_start_gte_now
-        else:
-            q_filter = sw_filter
-            
-        return Showtime.objects.filter(q_filter).order_by("date", "time_start")
-
-
 class CreateScreenView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     form_class = ScreenForm
     template_name = "staff/create-screen.html"
@@ -222,6 +166,55 @@ class RemoveScreenView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
                 reverse("edit-screen", kwargs={"scr_id": self.kwargs["scr_id"]}))
 
 
+class ScreenShowtimeView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    template_name = 'staff/admin-home.html'
+    context_object_name = 'showtime'
+    login_url = reverse_lazy("sign-in")
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.select_day = None
+        self.screen_id = None
+
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def get_queryset(self):
+        query_date_str = self.request.GET.get("day")
+        self.select_day = select_show.get_selected_day(query_date_str)
+        self.screen_id = self.kwargs["scr_id"]
+
+        screen_filter = Q(screen=self.screen_id)
+        day_filter = Q(start__date=self.select_day)
+        sw_filter = screen_filter & day_filter if self.screen_id else day_filter
+
+        return Showtime.objects.filter(sw_filter).order_by('start').\
+            exclude(start__lte=tz.localtime(tz.now()))
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # filter settings
+        filter_date = Q(showtime__start__date=self.select_day)
+        filter_time_start = Q(showtime__start__gte=tz.localtime(tz.now()))
+        filter_date_all = Q(start__date=self.select_day)
+        filter_time_start_all = Q(start__gte=tz.localtime(tz.now()))
+
+        if self.select_day.date() == tz.localtime(tz.now()).date():
+            showtime = Count('showtime', filter=filter_date & filter_time_start)
+            showtime_all = filter_date_all & filter_time_start_all
+        else:
+            showtime = Count('showtime', filter=filter_date)
+            showtime_all = filter_date_all
+
+        context['day_selected'] = self.select_day
+        context['screen_selected'] = self.screen_id
+        context['screens'] = ScreenCinema.objects.annotate(count=showtime)
+        context['screens_all'] = Showtime.objects.filter(showtime_all).count()
+
+        return context
+
+
 class CreateShowtimeView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     form_class = ShowtimeForm
     template_name = "staff/create-showtime.html"
@@ -233,7 +226,6 @@ class CreateShowtimeView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
         context["title"] = "Create showtime"
         return context
 
