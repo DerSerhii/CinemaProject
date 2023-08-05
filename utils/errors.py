@@ -1,0 +1,63 @@
+"""
+The module represents helper functions that provide error messages
+for various actions used in the project.
+"""
+
+import datetime as dt
+
+from django.utils import timezone as tz
+
+from cinema.models import ScreenCinema, Film
+from .helpers import find_showtime_intersections
+
+
+def has_error_showtime_start(start: dt.datetime | dt.date) -> str:
+    """
+    Returns an error message if the start of showtime less than the current moment.
+    If there is no error returns an empty string.
+    """
+    if type(start) == dt.date:
+        now = tz.localdate()
+        now_msg = f"Today is {now.strftime('%-d %b, %Y')}"
+    elif type(start) == dt.datetime:
+        now = tz.localtime()
+        now_msg = f"Now: {now.strftime('%-d %b %H:%M')}"
+    else:
+        raise ValueError(f"Passed {type(start)} but must be 'datetime.date' "
+                         "or 'datetime.datetime' object")
+
+    error_message = 'Impossible to create a showtime in the past! %s' % now_msg
+    return error_message if start < now else ''
+
+
+def has_error_last_day_rental(start: dt.date, last: dt.date) -> str:
+    """
+    Returns an error message if the last day of rental film is earlier than the beginning.
+    If there is no error returns an empty string.
+    """
+    error_message = "The last day of film rental can't be earlier than the beginning"
+    return error_message if last < start else ''
+
+
+def has_error_intersection_with_existing_showtime(
+        screen: ScreenCinema,
+        film: Film,
+        start_datetime: dt.datetime,
+        last_day: dt.date,
+        quantity: int = 5
+    ) -> str | None:
+    """
+
+    """
+    if intersections := find_showtime_intersections(screen, film, start_datetime, last_day):
+        error_message = ('The film distribution that is being created '
+                         f'has {len(intersections)} intersection(s) with existing showtime: ')
+        for q, ins in enumerate(intersections, start=1):
+            start = ins[0].strftime('%-d %b %H:%M')
+            end = ins[1].strftime('%H:%M')
+            punctuation_mark = ',' if len(intersections) > 1 else '.'
+            error_message += f"<{start}-{end} '{ins[2]}'>{punctuation_mark} "
+            if q >= quantity:
+                error_message += '...'
+                break
+        return error_message

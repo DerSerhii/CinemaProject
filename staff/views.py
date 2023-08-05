@@ -3,11 +3,11 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Count, Q, ProtectedError
 from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy, reverse
-from django.views.generic import ListView, CreateView, DeleteView, UpdateView
+from django.views.generic import ListView, CreateView, DeleteView, UpdateView, FormView
 from django.utils import timezone as tz
 
 from cinema.models import Showtime, ScreenCinema, Film
-from staff.forms import ScreenForm, ShowtimeForm, ShowtimeEditForm
+from staff.forms import ScreenForm, FilmRentalCreationForm, ShowtimeEditForm
 from utils import select_show
 
 
@@ -215,14 +215,18 @@ class ScreenShowtimeView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         return context
 
 
-class CreateShowtimeView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
-    form_class = ShowtimeForm
+class CreateShowtimeView(LoginRequiredMixin, UserPassesTestMixin, FormView):
+    form_class = FilmRentalCreationForm
     template_name = "staff/create-showtime.html"
     success_url = reverse_lazy("screen-showtime", kwargs={"scr_id": 0})
     login_url = reverse_lazy("sign-in")
 
     def test_func(self):
         return self.request.user.is_superuser
+
+    def form_valid(self, form):
+        form.create_film_rental()
+        return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

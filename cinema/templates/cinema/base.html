@@ -4,7 +4,6 @@
 <html>
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
         <title>
             {% if title %}
                 {{ title }}
@@ -12,10 +11,8 @@
                 MyCinema
             {% endif %}
         </title>
-
         <link type="text/css" href="{% static 'cinema/css/styles.css' %}" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet">
-
     </head>
 
     <body>
@@ -24,5 +21,4 @@
 
         {% include 'cinema/message.html' %}
     </body>
-
 </html>

@@ -2,29 +2,22 @@
 
 {% block content %}
 
-    {% include 'cinema/day-boxes.html' %}
+    {% include 'cinema/day-box-section.html' %}
 
     <section class="wrapper">
-
         {% for sw in showtime %}
         {% if sw.0 %}
-
         <hr class="hr-gradient">
-
             <div class="film-list">
-
                 <div class="poster-box">
                     {% if sw.0.film.poster %}
                     <img src="{{sw.0.film.poster.url}}" alt="Poster">
                     {% endif %}
                 </div>
-
                 <div class="showtime-info">
                     <div>
                         <h2>{{ sw.0.film.name }}</h2>
-
                         <p>{{ sw.0.film.description|linebreaks|truncatewords:60 }}</p>
-
                         <p>
                             <span class="bold-800">
                                 DIRECTORS
@@ -32,7 +25,6 @@
                             <br>
                             {{ sw.0.film.director }}
                         </p>
-
                         <p>
                             <span class="bold-800">
                                 CAST

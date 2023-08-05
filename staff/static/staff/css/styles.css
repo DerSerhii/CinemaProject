@@ -419,17 +419,40 @@ ul.lang-list li a:hover {color: #fdc073;}
 
 .form-input {
     background-color: none;
-    width: 300px;
-    font-size: 16px;
+    width: 350px;
+    font-size: 18px;
+    font-family: Tahoma;
 }
-
 .form-label {
     background-color: none;
     display: inline-block;
     min-width: 250px;
     vertical-align: top;
 }
-
+.form-input-film {
+  width: 330px;
+  height: 25px;
+  color: var(--main-bg-color);
+  font-size: 18px;
+  font-family: Tahoma;
+  text-align: center;
+}
+.form-input-date-screen {
+  width: 110px;
+  height: 25px;
+  color: var(--main-bg-color);
+  font-size: 18px;
+  font-family: Tahoma;
+  text-align: center;
+}
+.form-input-time {
+  width: 60px;
+  height: 20px;
+  color: var(--main-bg-color);
+  font-size: 18px;
+  font-family: Tahoma;
+  text-align: center;
+}
 .form-error ul {
     list-style: none;
     padding: 0;

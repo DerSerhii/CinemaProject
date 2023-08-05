@@ -1,28 +1,17 @@
 import datetime as dt
-
 from typing import Type
+
+
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils import timezone as tz
 from django.utils.translation import gettext as _
 from django.db.models import QuerySet, Q
+from django.db import connection
 
-from cinema.models import ScreenCinema, Showtime
+import utils
+from cinema.models import ScreenCinema, Showtime, Film
 from cinema_project import settings
-
-
-def get_time_end_showtime(date_start: dt.date,
-                          time_start: dt.time,
-                          duration: dt.timedelta) -> dt.datetime:
-    """
-    Return a time_end of a showtime (datatime.datatime), which is calculated based
-    on a duration of the showtime, and the technical break between a showtime.
-    """
-    time_end = (dt.datetime.combine(date_start, time_start, tz.get_current_timezone())
-                + duration
-                + settings.TECHNICAL_BREAK_BETWEEN_SHOWTIME
-                )
-    return time_end
 
 
 def get_overlapping_showtime(data_new_showtime: dict) -> QuerySet:
@@ -31,9 +20,9 @@ def get_overlapping_showtime(data_new_showtime: dict) -> QuerySet:
     """
     screen = data_new_showtime['screen']
     film = data_new_showtime['film']
-    date_start = data_new_showtime['date_start']  # obj: datatime.date
-    date_end = data_new_showtime['date_end']  # obj: datatime.date
-    time_start = data_new_showtime['time_start']  # obj: datatime.time
+    date_start = data_new_showtime['start_date']  # obj: datatime.date
+    date_end = data_new_showtime['end_date']  # obj: datatime.date
+    time_start = data_new_showtime['start_time']  # obj: datatime.time
 
     datetime_start = dt.datetime.combine(date_start,
                                          time_start,
@@ -66,9 +55,9 @@ def check_date_time_showtime(data_new_showtime: dict,
     """
 
     """
-    date_start = data_new_showtime['date_start']  # obj: datatime.date
-    date_end = data_new_showtime['date_end']  # obj: datatime.date
-    time_start = data_new_showtime['time_start']  # obj: datatime.time
+    date_start = data_new_showtime['start_date']  # obj: datatime.date
+    date_end = data_new_showtime['start_date']  # obj: datatime.date
+    time_start = data_new_showtime['start_time']  # obj: datatime.time
 
     current_timezone = tz.get_current_timezone()
     datetime_start = dt.datetime.combine(date_start,
@@ -76,9 +65,7 @@ def check_date_time_showtime(data_new_showtime: dict,
                                          current_timezone)  # obj: datatime.datetime
     # check Start datetime
     if datetime_start < tz.localtime():
-        raise validation_error(
-            'ATTENTION: Unable to create a showtime in the past'
-        )
+        raise validation_error('ATTENTION: Unable to create a showtime in the past' )
 
     # check End date
     if date_start > date_end:
@@ -108,55 +95,116 @@ class ScreenForm(forms.ModelForm):
         fields = ("name", "capacity")
 
 
-class ShowtimeForm(forms.ModelForm):
-    date_start = forms.DateField(widget=forms.SelectDateWidget,
-                                 initial=tz.localtime(tz.now()).date(),
-                                 label=_('Showtime date start'))
-    date_end = forms.DateField(widget=forms.SelectDateWidget,
-                               initial=tz.localtime(tz.now()).date(),
-                               label=_('Showtime date end'))
-    time_start = forms.TimeField()
+class FilmRentalCreationForm(forms.Form):
+    """
+    This object represents a form for creating a single showtime or cycle of showtime
+    that start at a certain time.
+    """
+    film = forms.ModelChoiceField(
+        queryset=Film.objects.filter(to_rental=True),
+        empty_label=_('= select ='),
+        widget=forms.Select(attrs={'class': 'form-input-film'}),
+        label=_('Film')
+    )
+    release_day = forms.DateField(
+        widget=forms.SelectDateWidget(attrs={'class': 'form-input-date-screen'},
+                                      years=utils.derive_range_years()),
+        label=_('Release day'),
+        initial=tz.localdate()
+    )
+    last_day = forms.DateField(
+        widget=forms.SelectDateWidget(attrs={'class': 'form-input-date-screen'},
+                                      years=utils.derive_range_years()),
+        label=_('Last day'),
+        initial=tz.localdate()
+    )
+    start_hour = forms.IntegerField(
+        widget=forms.NumberInput(attrs={'class': 'form-input-time', 'min': 0, 'max': 23}),
+        label=_('Start time'),
+        initial=tz.localtime().strftime('%H')
+    )
+    start_minute = forms.IntegerField(
+        widget=forms.NumberInput(attrs={'class': 'form-input-time', 'min': 0, 'max': 59, 'step': 5}),
+        initial=30
+    )
+    screen = forms.ModelChoiceField(
+        queryset=ScreenCinema.objects.all(),
+        empty_label=_('= select ='),
+        widget=forms.Select(attrs={'class': 'form-input-date-screen'}),
+        label=_('Screen')
+    )
+    price = forms.DecimalField(
+        widget=forms.NumberInput(attrs={'class': 'form-input-time', 'step': 1}),
+        label=_('Ticket price'),
+        initial=10,
+        max_value=1000,
+        min_value=0,
 
-    class Meta:
-        model = Showtime
-        fields = ['date_start', 'date_end', 'time_start', 'film', 'screen', 'price']
+    )
 
-    def clean(self):
+    def clean_release_day(self) -> tz.datetime.date:
+        release_day: dt.date = self.cleaned_data.get('release_day')
+        if error := utils.has_error_showtime_start(release_day):
+            raise ValidationError('👆🏽' + error)
+        return release_day
+
+    def clean_last_day(self) -> tz.datetime.date:
+        last_day: dt.date = self.cleaned_data.get('last_day')
+        if error := utils.has_error_showtime_start(last_day):
+            raise ValidationError('👆🏽' + error)
+        return last_day
+
+    def clean(self) -> dict | None:
         cleaned_data = super().clean()
-        check_date_time_showtime(cleaned_data, forms.ValidationError)
+        release_day: dt.date = cleaned_data.get('release_day')
+        last_day: dt.date = cleaned_data.get('last_day')
 
-    def save(self, commit=True):
-        form = super().save(commit=False)
+        if release_day and last_day:
+            if error := utils.has_error_last_day_rental(release_day, last_day):
+                self.add_error('last_day', '👆🏽' + error)
+                return
 
-        form.date = self.cleaned_data['date_start']
+            start_hour = cleaned_data.pop('start_hour')
+            start_minute = cleaned_data.pop('start_minute')
+            start_datetime = utils.construct_start_datetime(release_day, start_hour, start_minute)
 
-        date_start = self.cleaned_data['date_start']
-        date_end = self.cleaned_data['date_end']
-        time_start = self.cleaned_data['time_start']
+            if error := utils.has_error_showtime_start(start_datetime):
+                self.add_error('start_minute', '👆🏽' + error)
+                return
 
-        start = dt.datetime.combine(date_start, time_start)
-        end = get_time_end_showtime(date_start, time_start, form.film.duration)
-        # Convert Naive datetime.datetime in given timezone Aware
-        start_aware = tz.make_aware(start)
-        end_aware = tz.make_aware(end)
+            screen = cleaned_data.get('screen')
+            film = cleaned_data.get('film')
 
-        period = (date_end - form.date).days
+            if error := (
+                utils.has_error_intersection_with_existing_showtime(
+                    screen, film, start_datetime, last_day)
+            ):
+                raise ValidationError(error)
 
-        bulk_list = list()
-        for i in range(-1, period):
-            bulk_list.append(
+            cleaned_data['start_datetime'] = start_datetime
+            return cleaned_data
+
+    def create_film_rental(self) -> None:
+        film: Film = self.cleaned_data['film']
+        release_day: dt.date = self.cleaned_data['release_day']
+        last_day: dt.date = self.cleaned_data['last_day']
+        start_datetime = self.cleaned_data['start_datetime']
+        screen = self.cleaned_data['screen']
+        price = self.cleaned_data['price']
+
+        bulk_showtime = []
+        for day in range((last_day - release_day).days + 1):
+            start = start_datetime + dt.timedelta(days=day)
+            bulk_showtime.append(
                 Showtime(
-                    start=start_aware + dt.timedelta(i + 1),
-                    end=end_aware + dt.timedelta(i + 1),
-                    screen=form.screen,
-                    film=form.film,
-                    price=form.price,
+                    film=film,
+                    start=start,
+                    end=utils.calculate_showtime_end(start, film.duration),
+                    screen=screen,
+                    price=price,
                 )
             )
-        if commit:
-            Showtime.objects.bulk_create(bulk_list)
-
-        return form
+        Showtime.objects.bulk_create(bulk_showtime)
 
 
 class ShowtimeEditForm(forms.ModelForm):
@@ -190,9 +238,7 @@ class ShowtimeEditForm(forms.ModelForm):
     def save(self, commit=True):
         form = super().save(commit=False)
 
-        form.time_end = get_time_end_showtime(form.time_start, form.film.duration)
+        form.time_end = get_time_end_showtime(form.start_time, form.film.duration)
         if commit:
             form.save()
         return form
-
-# max_duration = Film.objects.aggregate(Max("duration"))["duration__max"]

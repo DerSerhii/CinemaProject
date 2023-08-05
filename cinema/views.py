@@ -17,7 +17,10 @@ from cinema.forms import SignUpForm, BuyTicketForm
 from cinema.models import Showtime, Film, Spectator, Ticket
 
 
-class CinemaHomeView(TemplateView):
+class CinemaHomePageView(TemplateView):
+    """
+    This object represents the first view that a visitor sees when visiting the site.
+    """
     template_name = "cinema/cinema-home.html"
 
     def get_context_data(self, **kwargs):
@@ -34,17 +37,12 @@ class CinemaHomeView(TemplateView):
 
     def get_selected_day(self):
         """
-        Return selected day 'datetime.date'
-        from template or today if start page
+        Returns the day selected by the user from the template.
+        if the choice has not yet been made, it returns the current date by default.
         """
-        query_date_str = self.request.GET.get("day")
-
-        if query_date_str:
-            showtime_day = datetime.strptime(query_date_str, "%m/%d/%Y").date()
-        else:
-            showtime_day = tz.localtime(tz.now()).date()
-
-        return showtime_day
+        if day := self.request.GET.get('day'):
+            return tz.datetime.strptime(day, "%m/%d/%Y").date()
+        return tz.localdate()
 
     @staticmethod
     def get_films_with_showtimes_on_this_day(select_day):

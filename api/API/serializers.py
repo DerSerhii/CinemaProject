@@ -82,10 +82,10 @@ class ShowtimeStaffSerializers(serializers.ModelSerializer):
             showtime = showtime.exclude(pk=self.instance.pk)
 
         for sht in showtime:
-            cross_days = (sht.date_start <= date_start <= sht.date_end) \
-                         or (sht.date_start <= date_end <= sht.date_end)
-            cross_hours = (sht.time_start <= time_start <= sht.time_end) \
-                          or (sht.time_start <= time_end <= sht.time_end)
+            cross_days = (sht.start_date <= date_start <= sht.end_date) \
+                         or (sht.start_date <= date_end <= sht.end_date)
+            cross_hours = (sht.start_time <= time_start <= sht.time_end) \
+                          or (sht.start_time <= time_end <= sht.time_end)
             if cross_days and cross_hours:
                 raise serializers.ValidationError(
                     f"Session crosses at least with session id#{sht.pk}"

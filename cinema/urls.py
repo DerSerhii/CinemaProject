@@ -1,12 +1,19 @@
-"""The URL Configuration of application CINEMA"""
+"""
+The URL Configuration of application CINEMA.
+"""
 
 from django.urls import path
 
-from .views import CinemaHomeView, SignUpView, SignInView, Logout, ProfileSpectatorView, \
-    WalletSpectatorView, ShowtimeView, BuyTicketView, SpectatorPurchaseView
+from .views import (CinemaHomePageView,
+                    SignUpView, SignInView, Logout,
+                    ProfileSpectatorView,
+                    WalletSpectatorView,
+                    ShowtimeView,
+                    BuyTicketView,
+                    SpectatorPurchaseView)
 
 urlpatterns = [
-    path('', CinemaHomeView.as_view(), name='cinema-home'),
+    path('', CinemaHomePageView.as_view(), name='cinema-home'),
     path('showtime/<int:show_id>', ShowtimeView.as_view(), name='showtime'),
     path('showtime/<int:show_id>/buy-ticket', BuyTicketView.as_view(), name='buy-ticket'),
 

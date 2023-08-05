@@ -26,10 +26,26 @@ SECRET_KEY = 'django-insecure-7-54i^6x60tb71fx!&tbd$y*njk+c3ayaj@8d*qa&2^%+qbzce
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django.db.backends': {
+            # 'level': 'INFO',
+            'level': 'DEBUG',
+            'handlers': ['console'],
+        },
+    },
+}
+
 ALLOWED_HOSTS = []
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -37,8 +53,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_extensions',
+
     'rest_framework',
     'rest_framework.authtoken',
+
     'staff',
     'cinema',
     'api',
@@ -52,6 +71,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
     'cinema.middleware.LogoutWithoutUserActivityMiddleware',
 ]
 
@@ -117,6 +137,10 @@ LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'Europe/Kiev'
 
+DATE_FORMAT = 'j N, Y'
+
+USE_L10N = False
+
 USE_I18N = True
 
 USE_TZ = True
@@ -138,20 +162,23 @@ MEDIA_URL = '/media/'
 
 AUTH_USER_MODEL = 'cinema.Spectator'
 
-TECHNICAL_BREAK_BETWEEN_SHOWTIME = dt.timedelta(minutes=30)
-
-PERIOD_OF_INACTIVITY_BEFORE_LOGOUT = dt.timedelta(minutes=10)
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 100,
-    
+
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
     ],
-    
+
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.BasicAuthentication',
         'api.API.authentication.TokenWithLifeTimeAuthentication',
     ],
 }
+
+
+TECHNICAL_BREAK_AFTER_SHOWTIME = dt.timedelta(minutes=30)
+TECHNICAL_TIME_BEFORE_SHOWTIME_APPOINTMENT = dt.timedelta(minutes=60)
+
+PERIOD_OF_INACTIVITY_BEFORE_LOGOUT = dt.timedelta(minutes=10)

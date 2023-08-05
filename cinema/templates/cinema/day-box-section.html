@@ -1,13 +1,9 @@
-{% load week_tag %}
+{% load week_period_tag %}
+{% get_week_period as week %}
 
 <section class="wrapper">
-
     <div>
         <ul class="glider-track">
-
-            {% now "D j M" as today %}
-            {% get_week as week %}
-
             {% for day in week %}
                 {% if day == day_selected %}
                     <li class="glider-date selected">
@@ -15,25 +11,20 @@
                     <li class="glider-date">
                 {% endif %}
                     <form method="GET" action="{% url 'cinema-home' %}">
-
                         <input type="hidden" name="day" value="{{ day|date:'SHORT_DATE_FORMAT' }}">
-
                         <button type="submit" class="day">
-                            {% if day|date:"D j M" == today %}
+                            {% if day == week.0 %}
                                 <span class="button">TODAY</span>
+                            {% elif day == week.1 %}
+                                <span class="button">TOMORROW</span>
                             {% else %}
                                 <span class="button">{{ day|date:"D"|upper }}</span>
-                                <br>
-                                {{ day|date:"j F" }}
+                                <br>{{ day|date:"j F" }}
                             {% endif %}
                         </button>
-
-                        </form>
-                    </li>
-
+                    </form>
+                </li>
             {% endfor %}
-
         </ul>
     </div>
-
 </section>
