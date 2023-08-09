@@ -11,10 +11,10 @@ from cinema.models import ScreenCinema, Film
 from .helpers import find_showtime_intersections
 
 
-def has_error_showtime_start(start: dt.datetime | dt.date) -> str:
+def has_error_showtime_start(start: dt.datetime | dt.date) -> str | None:
     """
     Returns an error message if the start of showtime less than the current moment.
-    If there is no error returns an empty string.
+    If there is no error returns `None`.
     """
     if type(start) == dt.date:
         now = tz.localdate()
@@ -25,18 +25,17 @@ def has_error_showtime_start(start: dt.datetime | dt.date) -> str:
     else:
         raise ValueError(f"Passed {type(start)} but must be 'datetime.date' "
                          "or 'datetime.datetime' object")
-
-    error_message = 'Impossible to create a showtime in the past! %s' % now_msg
-    return error_message if start < now else ''
+    if start < now:
+        return 'Impossible to create a showtime in the past! %s' % now_msg
 
 
 def has_error_last_day_rental(start: dt.date, last: dt.date) -> str:
     """
     Returns an error message if the last day of rental film is earlier than the beginning.
-    If there is no error returns an empty string.
+    If there is no error returns `None`.
     """
-    error_message = "The last day of film rental can't be earlier than the beginning"
-    return error_message if last < start else ''
+    if last < start:
+        return "The last day of film rental can't be earlier than the beginning"
 
 
 def has_error_intersection_with_existing_showtime(
@@ -47,17 +46,19 @@ def has_error_intersection_with_existing_showtime(
         quantity: int = 5
     ) -> str | None:
     """
-
+    Returns an error message if the created film distribution has intersections
+    with existing showtime.
+    If there is no error returns an empty list.
     """
     if intersections := find_showtime_intersections(screen, film, start_datetime, last_day):
         error_message = ('The film distribution that is being created '
                          f'has {len(intersections)} intersection(s) with existing showtime: ')
-        for q, ins in enumerate(intersections, start=1):
-            start = ins[0].strftime('%-d %b %H:%M')
-            end = ins[1].strftime('%H:%M')
+        for i, intersect in enumerate(intersections, start=1):
+            start = intersect[0].strftime('%-d %b %H:%M')
+            end = intersect[1].strftime('%H:%M')
             punctuation_mark = ',' if len(intersections) > 1 else '.'
-            error_message += f"<{start}-{end} '{ins[2]}'>{punctuation_mark} "
-            if q >= quantity:
+            error_message += f"<{start}-{end} '{intersect[2]}'>{punctuation_mark} "
+            if i >= quantity:
                 error_message += '...'
                 break
         return error_message

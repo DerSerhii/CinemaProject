@@ -1,6 +1,7 @@
 """
 The module represents helper functions for use in the project.
 """
+
 import datetime as dt
 
 from django.utils import timezone as tz
@@ -29,6 +30,14 @@ def construct_start_datetime(start_day: dt.date,
     return tz.make_aware(dt.datetime.combine(start_day, start_time))
 
 
+def calculate_showtime_end(start: dt.datetime, duration: dt.timedelta) -> dt.datetime:
+    """
+    Returns a calculated end datetime for a showtime based on passed start and duration.
+    Also, showtime includes technical break after a showtime.
+    """
+    return start + duration + settings.TECHNICAL_BREAK_AFTER_SHOWTIME
+
+
 def find_showtime_intersections(
         screen: ScreenCinema,
         film: Film,
@@ -36,14 +45,16 @@ def find_showtime_intersections(
         last_day: dt.date
     ) -> list[tuple[dt.datetime, dt.datetime, str]]:
     """
-
+    The helper function for finding intersections for the created film distribution.
+    Returns a list of tuples containing a start datetime, an end datetime, and a film title(name)
+    that have intersections with the created film distribution.
     """
     finish_datetime = calculate_showtime_end(start_datetime, film.duration)
 
     start_end_lst = []
     for day in range((last_day - start_datetime.date()).days + 1):
         start_end_lst += list(
-            map(lambda x: x + dt.timedelta(days=day), [start_datetime, finish_datetime])
+            map(lambda x: x + dt.timedelta(days=day), (start_datetime, finish_datetime))
         )
 
     existing_showtime_ranges = Showtime.objects.filter(screen=screen).values_list(
@@ -51,17 +62,9 @@ def find_showtime_intersections(
     )
 
     intersections = []
-    for rng in existing_showtime_ranges:
-        start, end = tuple(map(lambda x: tz.localtime(x), (rng[0], rng[1])))
+    for esr in existing_showtime_ranges:
+        start, end = tuple(map(lambda x: tz.localtime(x), (esr[0], esr[1])))
         if any(start < start_end < end for start_end in start_end_lst):
-            intersections.append((start, end, rng[2]))
+            intersections.append((start, end, esr[2]))
 
     return intersections
-
-
-def calculate_showtime_end(start: dt.datetime, duration: dt.timedelta) -> dt.datetime:
-    """
-    Returns a calculated end datetime for a showtime based on passed start and duration.
-    Also, showtime includes technical break after a showtime.
-    """
-    return start + duration + settings.TECHNICAL_BREAK_AFTER_SHOWTIME
