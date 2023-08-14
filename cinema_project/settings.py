@@ -37,7 +37,7 @@ LOGGING = {
     'loggers': {
         'django.db.backends': {
             # 'level': 'INFO',
-            'level': 'DEBUG',
+            # 'level': 'DEBUG',
             'handlers': ['console'],
         },
     },
@@ -178,7 +178,6 @@ REST_FRAMEWORK = {
 }
 
 
-TECHNICAL_BREAK_AFTER_SHOWTIME = dt.timedelta(minutes=30)
-TECHNICAL_TIME_BEFORE_SHOWTIME_APPOINTMENT = dt.timedelta(minutes=60)
+TECHNICAL_BREAK_AFTER_SHOWTIME = dt.timedelta(minutes=30) - dt.timedelta(microseconds=1)
 
 PERIOD_OF_INACTIVITY_BEFORE_LOGOUT = dt.timedelta(minutes=10)

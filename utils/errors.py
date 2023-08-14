@@ -29,13 +29,13 @@ def has_error_showtime_start(start: dt.datetime | dt.date) -> str | None:
         return 'Impossible to create a showtime in the past! %s' % now_msg
 
 
-def has_error_last_day_rental(start: dt.date, last: dt.date) -> str:
+def has_error_last_day_distribution(start: dt.date, last: dt.date) -> str:
     """
-    Returns an error message if the last day of rental film is earlier than the beginning.
+    Returns an error message if the last day of distribution film is earlier than the beginning.
     If there is no error returns `None`.
     """
     if last < start:
-        return "The last day of film rental can't be earlier than the beginning"
+        return "The last day of film distribution can't be earlier than the beginning"
 
 
 def has_error_intersection_with_existing_showtime(

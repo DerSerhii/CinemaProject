@@ -1,3 +1,5 @@
+import datetime as dt
+
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -45,7 +47,7 @@ class Film(models.Model):
     description = models.TextField(blank=True, verbose_name=_("Description"))
     starring = models.CharField(max_length=200, verbose_name=_("Starring"))
     director = models.CharField(max_length=50, verbose_name=_("Director"))
-    duration: tz.timedelta = models.DurationField(verbose_name=_("Duration"))
+    duration: dt.timedelta = models.DurationField(verbose_name=_("Duration"))
     poster = models.ImageField(null=True, blank=True, upload_to="poster/%Y/%m/%d/",
                                verbose_name=_("Poster"))
     to_rental = models.BooleanField(default=True)
@@ -89,9 +91,9 @@ class Showtime(models.Model):
         # print(self.end)
         # print(films)
 
-    def save(self, **kwargs):
-        self.end = self._compute_end_showtime()
-        super().save(**kwargs)
+    # def save(self, **kwargs):
+    #     self.end = self._compute_end_showtime()
+    #     super().save(**kwargs)
 
     def _check_start(self) -> None:
         current_datetime = tz.localtime()

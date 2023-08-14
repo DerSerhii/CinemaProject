@@ -85,7 +85,7 @@ class ShowtimeView(DetailView):
         context = super().get_context_data(**kwargs)
 
         context["buy_form"] = BuyTicketForm(self.object, initial={"quantity": 1})
-        context["free_seats"] = self.object.screen.capacity - self.object.attendance
+        context["free_seats"] = self.object.screen_blue.capacity - self.object.attendance
         return context
 
 

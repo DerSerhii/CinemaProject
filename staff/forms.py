@@ -160,7 +160,7 @@ class FilmRentalCreationForm(forms.Form):
         last_day: dt.date = cleaned_data.get('last_day')
 
         if release_day and last_day:
-            if error := utils.has_error_last_day_rental(release_day, last_day):
+            if error := utils.has_error_last_day_distribution(release_day, last_day):
                 self.add_error('last_day', '👆🏽' + error)
                 return
 
@@ -177,14 +177,15 @@ class FilmRentalCreationForm(forms.Form):
 
             if error := (
                 utils.has_error_intersection_with_existing_showtime(
-                    screen, film, start_datetime, last_day)
+                    screen, film, start_datetime, last_day
+                )
             ):
                 raise ValidationError(error)
 
             cleaned_data['start_datetime'] = start_datetime
             return cleaned_data
 
-    def create_film_rental(self) -> None:
+    def create_film_distribution(self) -> None:
         film: Film = self.cleaned_data['film']
         release_day: dt.date = self.cleaned_data['release_day']
         last_day: dt.date = self.cleaned_data['last_day']
@@ -199,7 +200,7 @@ class FilmRentalCreationForm(forms.Form):
                 Showtime(
                     film=film,
                     start=start,
-                    end=utils.calculate_showtime_end(start, film.duration),
+                    end=(start + film.duration),
                     screen=screen,
                     price=price,
                 )
@@ -238,7 +239,7 @@ class ShowtimeEditForm(forms.ModelForm):
     def save(self, commit=True):
         form = super().save(commit=False)
 
-        form.time_end = get_time_end_showtime(form.start_time, form.film.duration)
+        form.time_end = get_time_end_showtime(form.start_time, form.film_1_30.duration)
         if commit:
             form.save()
         return form

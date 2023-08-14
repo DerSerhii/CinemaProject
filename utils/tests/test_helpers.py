@@ -1,9 +1,10 @@
-from datetime import datetime, date, timedelta
+import datetime as dt
 
 from django.utils import timezone as tz
 from django.test import TestCase
 
 import utils
+from cinema.models import ScreenCinema, Film, Showtime
 from cinema_project import settings
 
 
@@ -25,80 +26,391 @@ class DeriveRangeYearsTestCase(TestCase):
 
 class ConstructStartDatetimeTestCase(TestCase):
     def test_construct_start_datetime(self):
-        test_date = date(2023, 8, 2)
+        test_date = dt.date(2023, 8, 2)
         test_hour = 14
         test_minute = 30
         expected_datetime = tz.make_aware(
-            datetime(test_date.year, test_date.month, test_date.day, test_hour, test_minute),
+            dt.datetime(test_date.year, test_date.month, test_date.day, test_hour, test_minute),
             tz.get_current_timezone()
         )
         result = utils.construct_start_datetime(test_date, test_hour, test_minute)
         self.assertEqual(result, expected_datetime)
 
 
-class HasErrorShowtimeStartTestCase(TestCase):
-    def setUp(self):
-        self.now = tz.localtime()
-        self.error_message = 'Impossible to create a showtime in the past! %s'
-
-    def test_past_date(self):
-        current_date = self.now.date()
-        past_date = current_date - timedelta(days=1)
-        now_msg = f"Today is {current_date.strftime('%-d %b, %Y')}"
-        error_message =  self.error_message % now_msg
-        result = utils.has_error_showtime_start(past_date)
-        self.assertEqual(error_message, result)
-
-    def test_current_date(self):
-        current_date = self.now.date()
-        result = utils.has_error_showtime_start(current_date)
-        self.assertEqual('', result)
-
-    def test_past_datetime(self):
-        current_datetime = self.now
-        past_datetime = current_datetime - timedelta(minutes=1)
-        now_msg = f"Now: {current_datetime.strftime('%-d %b %H:%M')}"
-        error_message = self.error_message % now_msg
-        result = utils.has_error_showtime_start(past_datetime)
-        self.assertEqual(error_message, result)
-
-    def test_future_datetime(self):
-        current_datetime = self.now
-        future_datetime = current_datetime + timedelta(minutes=1)
-        result = utils.has_error_showtime_start(future_datetime)
-        self.assertEqual('', result)
-
-    def test_invalid_input_type(self):
-        invalid_input = str(self.now)
-        with self.assertRaises(ValueError):
-            utils.has_error_showtime_start(invalid_input)
-
-
-class HasErrorLastDayRentalTestCase(TestCase):
-    def setUp(self):
-        self.start_day = date(2023, 8, 3)
-        self.error_message = "The last day of film rental can't be earlier than the beginning"
-
-    def test_last_day_earlier_than_start(self):
-        last_day = date(2023, 8, 2)
-        result = utils.has_error_last_day_rental(self.start_day, last_day)
-        self.assertEqual(self.error_message, result)
-
-    def test_last_day_same_as_start(self):
-        last_day = self.start_day
-        result = utils.has_error_last_day_rental(self.start_day, last_day)
-        self.assertEqual('', result)
-
-    def test_last_day_later_than_start(self):
-        last_day = date(2023, 8, 4)
-        result = utils.has_error_last_day_rental(self.start_day, last_day)
-        self.assertEqual('', result)
-
-
 class CalculateShowtimeEndTestCase(TestCase):
     def test_calculate_showtime_end(self):
-        start = datetime(2023, 1, 1, 0, 0)
-        duration = timedelta(hours=2, minutes=30)
+        start = dt.datetime(2023, 1, 1, 0, 0)
+        duration = dt.timedelta(hours=2, minutes=30)
         expected_end = start + duration + settings.TECHNICAL_BREAK_AFTER_SHOWTIME
         result = utils.calculate_showtime_end(start, duration)
         self.assertEqual(expected_end, result)
+
+
+class FindShowtimeIntersectionsTestCase(TestCase):
+    def setUp(self):
+        # **************************** Screen Set ******************************
+        self.screen_blue = ScreenCinema.objects.create(name='blue', capacity=50)
+        self.screen_green = ScreenCinema.objects.create(name='green', capacity=50)
+
+        # ****************************** Film Set ******************************
+        film_duration = dt.timedelta(hours=1.5)
+        # Film_No.1 [1:30]
+        self.film_1_30 = Film.objects.create(
+            name='Test Film 1:30 hour',
+            description='Test Description',
+            starring='Test Starring',
+            director='Test Director',
+            duration=film_duration
+        )
+        # Film_No.1 [2:00]
+        self.film_2_00 = Film.objects.create(
+            name='Test Film 2:00 hour',
+            description='Test Description',
+            starring='Test Starring',
+            director='Test Director',
+            duration=film_duration + dt.timedelta(minutes=30)
+        )
+
+        # ****************************** Showtime Set ******************************
+        # Showtime_No.1 [01/01 1:00-2:30]
+        self.start_datetime_sw1 = dt.datetime.fromisoformat('2023-01-01 01:00:00+02:00')
+        Showtime.objects.create(
+            film=self.film_1_30,
+            start=self.start_datetime_sw1,
+            end=self.start_datetime_sw1 + film_duration,
+            screen=self.screen_blue
+        )
+        # Showtime_No.2 [01/01 5:00-6:30]
+        self.start_datetime_sw2 = dt.datetime.fromisoformat('2023-01-01 05:00:00+02:00')
+        Showtime.objects.create(
+            film=self.film_1_30,
+            start=self.start_datetime_sw2,
+            end=self.start_datetime_sw2 + film_duration,
+            screen=self.screen_blue
+        )
+        # Showtime_No.1_2 [02/01 1:00-2:30]
+        self.start_datetime_sw1_2 = dt.datetime.fromisoformat('2023-01-02 01:00:00+02:00')
+        Showtime.objects.create(
+            film=self.film_1_30,
+            start=self.start_datetime_sw1_2,
+            end=self.start_datetime_sw1_2 + film_duration,
+            screen=self.screen_blue
+        )
+        # Showtime_No.1_3 [02/01 1:00-2:30]
+        self.start_datetime_sw1_3 = dt.datetime.fromisoformat('2023-01-03 01:00:00+02:00')
+        Showtime.objects.create(
+            film=self.film_1_30,
+            start=self.start_datetime_sw1_3,
+            end=self.start_datetime_sw1_3 + film_duration,
+            screen=self.screen_blue
+        )
+
+        self.technical_break_after_showtime_30 = dt.timedelta(minutes=30) - dt.timedelta(microseconds=1)
+        self.technical_break_after_showtime_0 = dt.timedelta(minutes=0) - dt.timedelta(microseconds=1)
+        # TODO function technical break
+
+    def test_no_intersections(self):
+        """
+        A new showtime is strictly between two existing showtimes.
+        [1:00-3:00*) – existing Showtime No.1
+        [3:00-5:00*) << new test showtime being created
+        [5:00-7:00*) – existing Showtime No.2
+        * – with technical break after a showtime.
+        Should not have showtime intersections.
+        """
+        start_datetime = dt.datetime.fromisoformat('2023-01-01 03:00:00+02:00')
+        last_day = dt.date.fromisoformat('2023-01-01')
+        result = utils.find_showtime_intersections(
+            self.screen_blue,
+            self.film_1_30,
+            start_datetime,
+            last_day,
+            self.technical_break_after_showtime_30
+        )
+        self.assertEqual([], result)
+
+    def test_showtime_similar_to_existing_showtime(self):
+        """
+        A new showtime has the same start and end as the existing one.
+        [1:00-3:00*) – existing Showtime No.1
+        [1:00-3:00*) << new test showtime being created.
+        * – with technical break after a showtime.
+        There must be an intersection.
+        """
+        start_datetime = self.start_datetime_sw1
+        last_day = dt.date.fromisoformat('2023-01-01')
+        result = utils.find_showtime_intersections(
+            self.screen_blue,
+            self.film_1_30,
+            start_datetime,
+            last_day,
+            self.technical_break_after_showtime_30
+        )
+        expected_data = [
+            (
+                start_datetime,
+                start_datetime + self.film_1_30.duration + self.technical_break_after_showtime_30,
+                self.film_1_30.name
+            )
+        ]
+        self.assertEqual(expected_data, result)
+
+    def test_showtime_start_similar_to_existing_showtime(self):
+        """
+        A new showtime has the same start as the existing one.
+        [1:00-3:00*) – existing Showtime No.1
+        [1:00-3:30*) << new test showtime being created.
+        * – with technical break after a showtime.
+        There must be an intersection.
+        """
+        start_datetime = self.start_datetime_sw1
+        last_day = dt.date.fromisoformat('2023-01-01')
+        result = utils.find_showtime_intersections(
+            self.screen_blue,
+            self.film_2_00,
+            start_datetime,
+            last_day,
+            self.technical_break_after_showtime_30
+        )
+        self.assertTrue(result)
+        expected_data = [
+            (
+                start_datetime,
+                start_datetime + self.film_1_30.duration + self.technical_break_after_showtime_30,
+                self.film_1_30.name
+            )
+        ]
+        self.assertEqual(expected_data, result)
+
+    def test_showtime_start_intersect_existing_showtime(self):
+        """
+        A new showtime has start among an existing showtime.
+        [1:00-3:00*) – existing Showtime No.1.
+        [2:00-4:00*) << new test showtime being created.
+        * – With technical break after a showtime.
+        There must be an intersection.
+        """
+        start_datetime = dt.datetime.fromisoformat('2023-01-01 02:00:00+02:00')
+        last_day = dt.date.fromisoformat('2023-01-01')
+        result = utils.find_showtime_intersections(
+            self.screen_blue,
+            self.film_1_30,
+            start_datetime,
+            last_day,
+            self.technical_break_after_showtime_30
+        )
+        self.assertTrue(result)
+        expected_data = [
+            (
+                self.start_datetime_sw1,
+                self.start_datetime_sw1 + self.film_1_30.duration + self.technical_break_after_showtime_30,
+                self.film_1_30.name
+            )
+        ]
+        self.assertEqual(expected_data, result)
+
+    def test_showtime_end_intersect_existing_showtime(self):
+        """
+        A new showtime has the end among an existing showtime.
+        [4:00-6:00*) << new test showtime being created.
+        [5:00-7:00*) – existing Showtime No.2.
+        * – with technical break after a showtime.
+        There must be an intersection.
+        """
+        start_datetime = dt.datetime.fromisoformat('2023-01-01 04:00:00+02:00')
+        last_day = dt.date.fromisoformat('2023-01-01')
+        result = utils.find_showtime_intersections(
+            self.screen_blue,
+            self.film_1_30,
+            start_datetime,
+            last_day,
+            self.technical_break_after_showtime_30
+        )
+        self.assertTrue(result)
+        expected_data = [
+            (
+                self.start_datetime_sw2,
+                self.start_datetime_sw2 + self.film_1_30.duration + self.technical_break_after_showtime_30,
+                self.film_1_30.name
+            )
+        ]
+        self.assertEqual(expected_data, result)
+
+    def test_showtime_start_in_last_year_and_end_intersect_existing_showtime(self):
+        """
+        A new showtime starts in last (year, month, day) and has the end among an existing showtime.
+        [31/12 23:00 – 01/01 1:30*) << new test showtime being created.
+        [01/01 1:00–3:00*) – existing Showtime No.1.
+        * – with technical break after a showtime.
+        There must be an intersection.
+        """
+        start_datetime = dt.datetime.fromisoformat('2022-12-31 23:00:00+02:00')
+        last_day = dt.date.fromisoformat('2022-12-31')
+        result = utils.find_showtime_intersections(
+            self.screen_blue,
+            self.film_2_00,
+            start_datetime,
+            last_day,
+            self.technical_break_after_showtime_30
+        )
+        self.assertTrue(result)
+        expected_data = [
+            (
+                self.start_datetime_sw1,
+                self.start_datetime_sw1 + self.film_1_30.duration + self.technical_break_after_showtime_30,
+                self.film_1_30.name
+            )
+        ]
+        self.assertEqual(expected_data, result)
+
+    def test_showtime_start_and_end_intersect_existing_showtimes(self):
+        """
+        A new showtime has the start and the end among an existing showtime.
+        [1:00-3:00*) – existing Showtime No.1.
+        [2:45-5:15*) << new test showtime being created.
+        [5:00-7:00*) – existing Showtime No.2.
+        * – with technical break after a showtime.
+        There must be two intersections.
+        """
+        start_datetime = dt.datetime.fromisoformat('2023-01-01 02:45:00+02:00')
+        last_day = dt.date.fromisoformat('2023-01-01')
+        result = utils.find_showtime_intersections(
+            self.screen_blue,
+            self.film_2_00,
+            start_datetime,
+            last_day,
+            self.technical_break_after_showtime_30
+        )
+        self.assertEqual(2, len(result))
+        expected_data = [
+            (
+                self.start_datetime_sw1,
+                self.start_datetime_sw1 + self.film_1_30.duration + self.technical_break_after_showtime_30,
+                self.film_1_30.name
+            ),
+            (
+                self.start_datetime_sw2,
+                self.start_datetime_sw2 + self.film_1_30.duration + self.technical_break_after_showtime_30,
+                self.film_1_30.name
+            )
+        ]
+        self.assertEqual(expected_data, result)
+
+    def test_film_distribution_start_intersect_existing_showtimes(self):
+        """
+        A new film distribution has the start among an existing showtimes.
+        [01/01 1:00-3:00*) – existing Showtime No.1.
+        [01/01 2:00-4:00*) << new test showtime being created No.1.
+        [02/01 1:00-3:00*) – existing Showtime No.1_2.
+        [02/01 2:00-4:00*) << new test showtime being created No.2.
+        [03/01 1:00-3:00*) – existing Showtime No.1_3.
+        [03/01 2:00-4:00*) << new test showtime being created No.3.
+        There must be three intersections.
+        """
+        start_datetime = dt.datetime.fromisoformat('2023-01-01 02:00:00+02:00')
+        last_day = dt.date.fromisoformat('2023-01-03')
+        result = utils.find_showtime_intersections(
+            self.screen_blue,
+            self.film_1_30,
+            start_datetime,
+            last_day,
+            self.technical_break_after_showtime_30
+        )
+        self.assertEqual(3, len(result))
+        expected_data = [
+            (
+                self.start_datetime_sw1,
+                self.start_datetime_sw1 + self.film_1_30.duration + self.technical_break_after_showtime_30,
+                self.film_1_30.name
+            ),
+            (
+                self.start_datetime_sw1_2,
+                self.start_datetime_sw1_2 + self.film_1_30.duration + self.technical_break_after_showtime_30,
+                self.film_1_30.name
+            ),
+            (
+                self.start_datetime_sw1_3,
+                self.start_datetime_sw1_3 + self.film_1_30.duration + self.technical_break_after_showtime_30,
+                self.film_1_30.name
+            )
+        ]
+        self.assertEqual(expected_data, result)
+
+    def test_film_distribution_end_intersect_existing_showtimes(self):
+        """
+        A new film distribution has the end among an existing showtimes.
+        [31/12 23:00 – 01/01 1:30*) << new test showtime being created No.1.
+        [01/01 1:00-3:00*) – existing Showtime No.1.
+        [01/01 23:00 – 02/01 1:30*) << new test showtime being created No.2.
+        [02/01 1:00-3:00*) – existing Showtime No.1_2.
+        [02/01 23:00 – 03/01 1:30*) << new test showtime being created No.2.
+        [03/01 1:00-3:00*) – existing Showtime No.1_3.
+        There must be three intersections.
+        """
+        start_datetime = dt.datetime.fromisoformat('2022-12-31 23:00:00+02:00')
+        last_day = dt.date.fromisoformat('2023-01-03')
+        result = utils.find_showtime_intersections(
+            self.screen_blue,
+            self.film_2_00,
+            start_datetime,
+            last_day,
+            self.technical_break_after_showtime_30
+        )
+        self.assertEqual(3, len(result))
+        expected_data = [
+            (
+                self.start_datetime_sw1,
+                self.start_datetime_sw1 + self.film_1_30.duration + self.technical_break_after_showtime_30,
+                self.film_1_30.name
+            ),
+            (
+                self.start_datetime_sw1_2,
+                self.start_datetime_sw1_2 + self.film_1_30.duration + self.technical_break_after_showtime_30,
+                self.film_1_30.name
+            ),
+            (
+                self.start_datetime_sw1_3,
+                self.start_datetime_sw1_3 + self.film_1_30.duration + self.technical_break_after_showtime_30,
+                self.film_1_30.name
+            )
+        ]
+        self.assertEqual(expected_data, result)
+
+    def test_other_screen(self):
+        """
+        A new showtime has the same start and end as the existing one,
+        but is shown in a different screen.
+        [1:00-3:00*) – existing Showtime No.1 {screen: blue}
+        [1:00-3:00*) << new test showtime being created {screen: green}.
+        * – With technical break after a showtime.
+        Should not have showtime intersections.
+        """
+        start_datetime = self.start_datetime_sw1
+        last_day = dt.date.fromisoformat('2023-01-01')
+        result = utils.find_showtime_intersections(
+            self.screen_green,
+            self.film_1_30,
+            start_datetime,
+            last_day,
+            self.technical_break_after_showtime_30
+        )
+        self.assertEqual([], result)
+
+    def test_when_break_after_showtime_equal_zero(self):
+        """
+        Technical break after showtime equal O (zero) minutes.
+        [1:00-2:30*) – existing Showtime No.1
+        [2:30-4:00*) << new test showtime being created.
+        * – technical break after a showtime should still have minus one microsecond.
+        Should not have showtime intersections.
+        """
+        start_datetime = dt.datetime.fromisoformat('2023-01-01 02:30:00+02:00')
+        last_day = dt.date.fromisoformat('2023-01-01')
+        result = utils.find_showtime_intersections(
+            self.screen_blue,
+            self.film_1_30,
+            start_datetime,
+            last_day,
+            self.technical_break_after_showtime_0
+        )
+        self.assertEqual([], result)

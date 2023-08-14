@@ -32,6 +32,7 @@ def construct_start_datetime(start_day: dt.date,
 
 def calculate_showtime_end(start: dt.datetime, duration: dt.timedelta) -> dt.datetime:
     """
+    TODO remove
     Returns a calculated end datetime for a showtime based on passed start and duration.
     Also, showtime includes technical break after a showtime.
     """
@@ -41,15 +42,16 @@ def calculate_showtime_end(start: dt.datetime, duration: dt.timedelta) -> dt.dat
 def find_showtime_intersections(
         screen: ScreenCinema,
         film: Film,
-        start_datetime: dt.datetime,
-        last_day: dt.date
+        start_datetime: tz.datetime,
+        last_day: dt.date,
+        technical_break: dt.timedelta
     ) -> list[tuple[dt.datetime, dt.datetime, str]]:
     """
     The helper function for finding intersections for the created film distribution.
     Returns a list of tuples containing a start datetime, an end datetime, and a film title(name)
     that have intersections with the created film distribution.
     """
-    finish_datetime = calculate_showtime_end(start_datetime, film.duration)
+    finish_datetime = start_datetime + film.duration + technical_break
 
     start_end_lst = []
     for day in range((last_day - start_datetime.date()).days + 1):
@@ -60,11 +62,11 @@ def find_showtime_intersections(
     existing_showtime_ranges = Showtime.objects.filter(screen=screen).values_list(
         'start', 'end', 'film__name'
     )
-
     intersections = []
     for esr in existing_showtime_ranges:
         start, end = tuple(map(lambda x: tz.localtime(x), (esr[0], esr[1])))
-        if any(start < start_end < end for start_end in start_end_lst):
+        end += technical_break
+        if any(start <= start_end <= end for start_end in start_end_lst):
             intersections.append((start, end, esr[2]))
 
     return intersections

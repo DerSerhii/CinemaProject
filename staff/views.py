@@ -225,7 +225,7 @@ class CreateShowtimeView(LoginRequiredMixin, UserPassesTestMixin, FormView):
         return self.request.user.is_superuser
 
     def form_valid(self, form):
-        form.create_film_rental()
+        form.create_film_distribution()
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
