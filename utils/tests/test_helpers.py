@@ -5,7 +5,6 @@ from django.test import TestCase
 
 import utils
 from cinema.models import ScreenCinema, Film, Showtime
-from cinema_project import settings
 
 
 class DeriveRangeYearsTestCase(TestCase):
@@ -37,16 +36,11 @@ class ConstructStartDatetimeTestCase(TestCase):
         self.assertEqual(result, expected_datetime)
 
 
-class CalculateShowtimeEndTestCase(TestCase):
-    def test_calculate_showtime_end(self):
-        start = dt.datetime(2023, 1, 1, 0, 0)
-        duration = dt.timedelta(hours=2, minutes=30)
-        expected_end = start + duration + settings.TECHNICAL_BREAK_AFTER_SHOWTIME
-        result = utils.calculate_showtime_end(start, duration)
-        self.assertEqual(expected_end, result)
-
-
 class FindShowtimeIntersectionsTestCase(TestCase):
+    """
+    Test case for the `find_showtime_intersections` function.
+    """
+
     def setUp(self):
         # **************************** Screen Set ******************************
         self.screen_blue = ScreenCinema.objects.create(name='blue', capacity=50)
@@ -105,9 +99,12 @@ class FindShowtimeIntersectionsTestCase(TestCase):
             screen=self.screen_blue
         )
 
-        self.technical_break_after_showtime_30 = dt.timedelta(minutes=30) - dt.timedelta(microseconds=1)
-        self.technical_break_after_showtime_0 = dt.timedelta(minutes=0) - dt.timedelta(microseconds=1)
-        # TODO function technical break
+        self.technical_break_after_showtime_30 = utils.get_technical_break_after_showtime(
+            dt.timedelta(minutes=30)
+        )
+        self.technical_break_after_showtime_0 = utils.get_technical_break_after_showtime(
+            dt.timedelta(minutes=0)
+        )
 
     def test_no_intersections(self):
         """

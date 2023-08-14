@@ -30,13 +30,15 @@ def construct_start_datetime(start_day: dt.date,
     return tz.make_aware(dt.datetime.combine(start_day, start_time))
 
 
-def calculate_showtime_end(start: dt.datetime, duration: dt.timedelta) -> dt.datetime:
+def get_technical_break_after_showtime(technical_break: dt.timedelta) -> dt.timedelta:
     """
-    TODO remove
-    Returns a calculated end datetime for a showtime based on passed start and duration.
-    Also, showtime includes technical break after a showtime.
+    Returns passed technical break reduced by one microsecond.
+
+    This solution solves the problem of intersection
+    when one showtime ends at a certain time and another showtime starts at the same time.
+    It is like a math expression: [start_film, end_film)
     """
-    return start + duration + settings.TECHNICAL_BREAK_AFTER_SHOWTIME
+    return technical_break - dt.timedelta(microseconds=1)
 
 
 def find_showtime_intersections(

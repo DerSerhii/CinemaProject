@@ -5,7 +5,7 @@ This package represents helper functions for use in the project.
 from .helpers import (
     derive_range_years,
     construct_start_datetime,
-    calculate_showtime_end,
+    get_technical_break_after_showtime,
     find_showtime_intersections
 )
 from .errors import (
@@ -17,7 +17,7 @@ from .errors import (
 __all__ = [
     'derive_range_years',
     'construct_start_datetime',
-    'calculate_showtime_end',
+    'get_technical_break_after_showtime',
     'find_showtime_intersections',
     'has_error_showtime_start',
     'has_error_last_day_distribution',
