@@ -1,3 +1,7 @@
+"""
+The module represents test cases for functions of module `helpers`.
+"""
+
 import datetime as dt
 
 from django.utils import timezone as tz
@@ -8,6 +12,10 @@ from cinema.models import ScreenCinema, Film, Showtime
 
 
 class DeriveRangeYearsTestCase(TestCase):
+    """
+    Test case for the `derive_range_years` function.
+    """
+
     def setUp(self):
         self.current_year = tz.localtime().year
 
@@ -24,6 +32,10 @@ class DeriveRangeYearsTestCase(TestCase):
 
 
 class ConstructStartDatetimeTestCase(TestCase):
+    """
+    Test case for the `construct_start_datetime` function.
+    """
+
     def test_construct_start_datetime(self):
         test_date = dt.date(2023, 8, 2)
         test_hour = 14
@@ -34,6 +46,80 @@ class ConstructStartDatetimeTestCase(TestCase):
         )
         result = utils.construct_start_datetime(test_date, test_hour, test_minute)
         self.assertEqual(result, expected_datetime)
+
+
+class GetTimeRangeNewShowtimesTestCase(TestCase):
+    """
+    Test case for the `get_time_range_new_showtimes` function.
+    """
+    def setUp(self):
+        self.film_1_30 = Film.objects.create(
+            name='Test Film 1:30 hour',
+            description='Test Description',
+            starring='Test Starring',
+            director='Test Director',
+            duration=dt.timedelta(hours=1)
+        )
+
+    def test_single_showtime(self):
+        """
+        A single showtime is created.
+        The end of the showtime should be equal to the beginning plus the length of the film.
+        """
+        start_datetime = dt.datetime.fromisoformat('2023-01-01 01:00:00+02:00')
+        last_day = dt.date.fromisoformat('2023-01-01')
+        result = utils.get_time_range_new_showtimes(
+            self.film_1_30.duration,
+            start_datetime,
+            last_day
+        )
+        expected_data = [
+            (
+                start_datetime,
+                dt.datetime.fromisoformat('2023-01-01 02:00:00+02:00')
+            )
+        ]
+        self.assertEqual(1, len(result))
+        self.assertEqual(2, len(result[0]))
+        self.assertEqual(list, type(result))
+        self.assertEqual(utils.TimeRange, type(result[0]))
+        self.assertEqual(dt.datetime, type(result[0].start))
+        self.assertEqual(dt.datetime, type(result[0].end))
+        self.assertEqual(expected_data, result)
+
+    def test_film_distribution(self):
+        """
+        Showtimes are created from 01/01 to 04/01.
+        There should be four showtimes in total, which start at the same time each of these days.
+        """
+        start_datetime_release = dt.datetime.fromisoformat('2023-01-01 01:00:00+02:00')
+        start_datetime_day_3 = dt.datetime.fromisoformat('2023-01-03 01:00:00+02:00')
+        last_day = dt.date.fromisoformat('2023-01-04')
+        result = utils.get_time_range_new_showtimes(
+            self.film_1_30.duration,
+            start_datetime_release,
+            last_day
+        )
+        expected_data = [
+            (
+                start_datetime_release,
+                dt.datetime.fromisoformat('2023-01-01 02:00:00+02:00')
+            ),
+            (
+                start_datetime_release + dt.timedelta(days=1),
+                dt.datetime.fromisoformat('2023-01-02 02:00:00+02:00')
+            ),
+            (
+                start_datetime_day_3,
+                start_datetime_day_3 + self.film_1_30.duration
+            ),
+            (
+                dt.datetime.fromisoformat('2023-01-04 01:00:00+02:00'),
+                dt.datetime.fromisoformat('2023-01-04 02:00:00+02:00')
+            ),
+        ]
+        self.assertEqual(4, len(result))
+        self.assertEqual(expected_data, result)
 
 
 class FindShowtimeIntersectionsTestCase(TestCase):
@@ -373,7 +459,7 @@ class FindShowtimeIntersectionsTestCase(TestCase):
         ]
         self.assertEqual(expected_data, result)
 
-    def test_other_screen(self):
+    def test_another_screen(self):
         """
         A new showtime has the same start and end as the existing one,
         but is shown in a different screen.

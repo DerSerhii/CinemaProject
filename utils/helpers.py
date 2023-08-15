@@ -3,11 +3,14 @@ The module represents helper functions for use in the project.
 """
 
 import datetime as dt
+from collections import namedtuple
 
 from django.utils import timezone as tz
 
 from cinema.models import Showtime, ScreenCinema, Film
-from cinema_project import settings
+
+
+TimeRange = namedtuple('timerange', 'start end')
 
 
 def derive_range_years(quantity: int = 2) -> list[int]:
@@ -41,17 +44,36 @@ def get_technical_break_after_showtime(technical_break: dt.timedelta) -> dt.time
     return technical_break - dt.timedelta(microseconds=1)
 
 
+def get_time_range_new_showtimes(
+        film_duration: dt.timedelta,
+        start_datetime: dt.datetime,
+        last_day: dt.date
+    ) -> list[TimeRange[dt.datetime, dt.datetime]]:
+    """
+    Helper function for forming the time range of new showtimes.
+    Returns a list of `TimeRange` namedtuples, consisting of two `datetime.datetime` objects:
+    `start` is the beginning of showtime, `end` is its finish.
+    """
+    time_range_lst = []
+    for day in range((last_day - start_datetime.date()).days + 1):
+        start = start_datetime + dt.timedelta(days=day)
+        end = start + film_duration
+        time_range_lst.append(TimeRange(start, end))
+
+    return time_range_lst
+
+
 def find_showtime_intersections(
         screen: ScreenCinema,
         film: Film,
-        start_datetime: tz.datetime,
+        start_datetime: dt.datetime,
         last_day: dt.date,
         technical_break: dt.timedelta
     ) -> list[tuple[dt.datetime, dt.datetime, str]]:
     """
-    The helper function for finding intersections for the created film distribution.
+    The helper function for finding intersections for the film distribution that is being created.
     Returns a list of tuples containing a start datetime, an end datetime, and a film title(name)
-    that have intersections with the created film distribution.
+    that have intersections with the film distribution that is being created.
     """
     finish_datetime = start_datetime + film.duration + technical_break
 
@@ -64,6 +86,7 @@ def find_showtime_intersections(
     existing_showtime_ranges = Showtime.objects.filter(screen=screen).values_list(
         'start', 'end', 'film__name'
     )
+
     intersections = []
     for esr in existing_showtime_ranges:
         start, end = tuple(map(lambda x: tz.localtime(x), (esr[0], esr[1])))
