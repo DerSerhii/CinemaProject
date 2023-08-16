@@ -68,7 +68,7 @@ class GetTimeRangeNewShowtimesTestCase(TestCase):
         """
         start_datetime = dt.datetime.fromisoformat('2023-01-01 01:00:00+02:00')
         last_day = dt.date.fromisoformat('2023-01-01')
-        result = utils.get_time_range_new_showtimes(
+        result = utils.get_timerange_new_showtimes(
             self.film_1_30.duration,
             start_datetime,
             last_day
@@ -80,7 +80,6 @@ class GetTimeRangeNewShowtimesTestCase(TestCase):
             )
         ]
         self.assertEqual(1, len(result))
-        self.assertEqual(2, len(result[0]))
         self.assertEqual(list, type(result))
         self.assertEqual(utils.TimeRange, type(result[0]))
         self.assertEqual(dt.datetime, type(result[0].start))
@@ -95,7 +94,7 @@ class GetTimeRangeNewShowtimesTestCase(TestCase):
         start_datetime_release = dt.datetime.fromisoformat('2023-01-01 01:00:00+02:00')
         start_datetime_day_3 = dt.datetime.fromisoformat('2023-01-03 01:00:00+02:00')
         last_day = dt.date.fromisoformat('2023-01-04')
-        result = utils.get_time_range_new_showtimes(
+        result = utils.get_timerange_new_showtimes(
             self.film_1_30.duration,
             start_datetime_release,
             last_day

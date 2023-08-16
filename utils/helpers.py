@@ -4,13 +4,15 @@ The module represents helper functions for use in the project.
 
 import datetime as dt
 from collections import namedtuple
+from itertools import chain
 
 from django.utils import timezone as tz
 
 from cinema.models import Showtime, ScreenCinema, Film
 
 
-TimeRange = namedtuple('timerange', 'start end')
+TimeRange = namedtuple('TimeRange', ['start', 'end'])
+FilmTimeRange = namedtuple('FilmTimeRange', list(TimeRange._fields) + ['film_name'])
 
 
 def derive_range_years(quantity: int = 2) -> list[int]:
@@ -44,11 +46,11 @@ def get_technical_break_after_showtime(technical_break: dt.timedelta) -> dt.time
     return technical_break - dt.timedelta(microseconds=1)
 
 
-def get_time_range_new_showtimes(
+def get_timerange_new_showtimes(
         film_duration: dt.timedelta,
         start_datetime: dt.datetime,
         last_day: dt.date
-    ) -> list[TimeRange[dt.datetime, dt.datetime]]:
+    ) -> list[TimeRange[dt.datetime, dt.datetime, None]]:
     """
     Helper function for forming the time range of new showtimes.
     Returns a list of `TimeRange` namedtuples, consisting of two `datetime.datetime` objects:
@@ -69,29 +71,40 @@ def find_showtime_intersections(
         start_datetime: dt.datetime,
         last_day: dt.date,
         technical_break: dt.timedelta
-    ) -> list[tuple[dt.datetime, dt.datetime, str]]:
+    ) -> list[FilmTimeRange[dt.datetime, dt.datetime, str]]:
     """
     The helper function for finding intersections for the film distribution that is being created.
-    Returns a list of tuples containing a start datetime, an end datetime, and a film title(name)
-    that have intersections with the film distribution that is being created.
+
+    Returns a list of `FilmTimeRange` namedtuples containing a start datetime, an end datetime,
+    and a film name(title) that have intersections with the film distribution that is being created.
+
+    Attention!
+    Intersections take into account the technical break after the showtime.
     """
-    finish_datetime = start_datetime + film.duration + technical_break
-
-    start_end_lst = []
-    for day in range((last_day - start_datetime.date()).days + 1):
-        start_end_lst += list(
-            map(lambda x: x + dt.timedelta(days=day), (start_datetime, finish_datetime))
+    # Getting showtime ranges that are being created.
+    # For each end of showtime, a technical break is added.
+    new_showtime_ranges_with_technical_break = list(
+        map(
+            lambda timerange: timerange._replace(end=timerange.end + technical_break),
+            get_timerange_new_showtimes(film.duration, start_datetime, last_day)
         )
+    )
+    # From the ranges of showtimes,
+    # a common list of the starts and ends of these showtimes is created.
+    start_end_lst = list(chain.from_iterable(new_showtime_ranges_with_technical_break))
 
-    existing_showtime_ranges = Showtime.objects.filter(screen=screen).values_list(
+    queryset = Showtime.objects.filter(screen=screen).values_list(
         'start', 'end', 'film__name'
     )
+    existing_showtime_ranges = list(map(lambda ft_range: FilmTimeRange._make(ft_range), queryset))
 
     intersections = []
-    for esr in existing_showtime_ranges:
-        start, end = tuple(map(lambda x: tz.localtime(x), (esr[0], esr[1])))
+    for esh_range in existing_showtime_ranges:
+        # Converting an aware datetime to local time, since Postgres always returns datetime in UTC.
+        start, end = tuple(map(lambda r: tz.localtime(r), (esh_range.start, esh_range.end)))
+        # A technical break is added.
         end += technical_break
         if any(start <= start_end <= end for start_end in start_end_lst):
-            intersections.append((start, end, esr[2]))
+            intersections.append((start, end, esh_range.film_name))
 
     return intersections
