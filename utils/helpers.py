@@ -75,8 +75,9 @@ def find_showtime_intersections(
     """
     The helper function for finding intersections for the film distribution that is being created.
 
-    Returns a list of `FilmTimeRange` namedtuples containing a start datetime, an end datetime,
-    and a film name(title) that have intersections with the film distribution that is being created.
+    Returns a list of `FilmTimeRange` namedtuples containing:
+    `start` datetime, `end` datetime, and `film_name` string,
+    which have intersections with the film distribution that is being created.
 
     Attention!
     Intersections take into account the technical break after the showtime.
@@ -105,6 +106,6 @@ def find_showtime_intersections(
         # A technical break is added.
         end += technical_break
         if any(start <= start_end <= end for start_end in start_end_lst):
-            intersections.append((start, end, esh_range.film_name))
+            intersections.append(FilmTimeRange(start, end, esh_range.film_name))
 
     return intersections

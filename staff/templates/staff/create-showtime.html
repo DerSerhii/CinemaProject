@@ -7,7 +7,7 @@
         <div class="edit-panel"><p class="first">{{ title|upper }}</p></div>
         <form method="post">
             {% csrf_token %}
-            <div class="form-error">{{ form.non_field_errors }}</div>
+            <div class="form-error">{{ form.non_field_errors|linebreaksbr }}</div>
             {% for f in form %}
                 {% if f.id_for_label == 'id_start_hour' %}
                     <p class="form-input">

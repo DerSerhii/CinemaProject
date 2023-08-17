@@ -184,6 +184,7 @@ class FindShowtimeIntersectionsTestCase(TestCase):
             screen=self.screen_blue
         )
 
+        # *************************** Technical Break Set ******************************
         self.technical_break_after_showtime_30 = utils.get_technical_break_after_showtime(
             dt.timedelta(minutes=30)
         )
@@ -480,7 +481,7 @@ class FindShowtimeIntersectionsTestCase(TestCase):
 
     def test_when_break_after_showtime_equal_zero(self):
         """
-        Technical break after showtime equal O (zero) minutes.
+        The technical break after a showtime equal O (zero) minutes.
         [1:00-2:30*) – existing Showtime No.1
         [2:30-4:00*) << new test showtime being created.
         * – technical break after a showtime should still have minus one microsecond.
@@ -488,11 +489,11 @@ class FindShowtimeIntersectionsTestCase(TestCase):
         """
         start_datetime = dt.datetime.fromisoformat('2023-01-01 02:30:00+02:00')
         last_day = dt.date.fromisoformat('2023-01-01')
-        result = utils.find_showtime_intersections(
+        result_1_30 = utils.find_showtime_intersections(
             self.screen_blue,
             self.film_1_30,
             start_datetime,
             last_day,
             self.technical_break_after_showtime_0
         )
-        self.assertEqual([], result)
+        self.assertEqual([], result_1_30)

@@ -7,7 +7,6 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone as tz
 from django.utils.translation import gettext as _
 from django.db.models import QuerySet, Q
-from django.db import connection
 
 import utils
 from cinema.models import ScreenCinema, Showtime, Film
@@ -176,8 +175,8 @@ class FilmRentalCreationForm(forms.Form):
             film = cleaned_data.get('film')
 
             if error := (
-                utils.has_error_intersection_with_existing_showtime(
-                    screen, film, start_datetime, last_day
+                utils.has_error_intersection_with_existing_showtimes(
+                    screen, film, start_datetime, last_day, settings.TECHNICAL_BREAK_AFTER_SHOWTIME
                 )
             ):
                 raise ValidationError(error)

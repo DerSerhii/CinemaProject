@@ -6,6 +6,7 @@ for various actions used in the project.
 import datetime as dt
 
 from django.utils import timezone as tz
+from django.utils.translation import gettext as _
 
 from cinema.models import ScreenCinema, Film
 from .helpers import find_showtime_intersections
@@ -14,7 +15,7 @@ from .helpers import find_showtime_intersections
 def has_error_showtime_start(start: dt.datetime | dt.date) -> str | None:
     """
     Returns an error message if the start of showtime less than the current moment.
-    If there is no error returns `None`.
+    If there is no error, returns `None`.
     """
     if type(start) == dt.date:
         now = tz.localdate()
@@ -26,39 +27,61 @@ def has_error_showtime_start(start: dt.datetime | dt.date) -> str | None:
         raise ValueError(f"Passed {type(start)} but must be 'datetime.date' "
                          "or 'datetime.datetime' object")
     if start < now:
-        return 'Impossible to create a showtime in the past! %s' % now_msg
+        return _('Impossible to create a showtime in the past! %s' % now_msg)
 
 
-def has_error_last_day_distribution(start: dt.date, last: dt.date) -> str:
+def has_error_last_day_distribution(start: dt.date, last: dt.date) -> str | None:
     """
     Returns an error message if the last day of distribution film is earlier than the beginning.
-    If there is no error returns `None`.
+
+    If there is no error, returns `None`.
     """
     if last < start:
-        return "The last day of film distribution can't be earlier than the beginning"
+        return _("The last day of film distribution can't be earlier than the beginning")
 
 
-def has_error_intersection_with_existing_showtime(
+def has_error_intersection_with_existing_showtimes(
         screen: ScreenCinema,
         film: Film,
         start_datetime: dt.datetime,
         last_day: dt.date,
-        quantity: int = 5
-    ) -> str | None:
+        technical_break: dt.timedelta,
+        show_error: int = 5) -> str | None:
     """
-    Returns an error message if the created film distribution has intersections
-    with existing showtime.
-    If there is no error returns an empty list.
+    Returns an error message if film distribution that is being created has intersections
+    with existing showtimes.
+
+    Attention!
+    Intersections take into account the technical break after the showtime.
+
+    If there is no error, returns `None`.
     """
-    if intersections := find_showtime_intersections(screen, film, start_datetime, last_day):
-        error_message = ('The film distribution that is being created '
-                         f'has {len(intersections)} intersection(s) with existing showtime: ')
+    intersections = find_showtime_intersections(screen, film, start_datetime, last_day, technical_break)
+    quantity_intersections = len(intersections)
+
+    if intersections:
+        error_message = _('The film distribution that is being created '
+                          f'has {quantity_intersections} intersection(s) with existing showtimes:\n')
+        break_mark = break_note = ''
+
         for i, intersect in enumerate(intersections, start=1):
-            start = intersect[0].strftime('%-d %b %H:%M')
-            end = intersect[1].strftime('%H:%M')
-            punctuation_mark = ',' if len(intersections) > 1 else '.'
-            error_message += f"<{start}-{end} '{intersect[2]}'>{punctuation_mark} "
-            if i >= quantity:
-                error_message += '...'
+            start = intersect.start.strftime('%-d %b %-H:%M')
+            end = intersect.end.strftime('%-H:%M')
+            punctuation_mark = ',' if i != quantity_intersections else '.'
+
+            if technical_break > dt.timedelta():
+                break_mark = '*'
+                break_note = _(' * Attention! Intersections take into account the technical break '
+                               f'({technical_break.seconds // 60 + 1} min) after a showtime.')
+
+            error_message += (
+                _(f'{i}. {start}–{end}{break_mark} "{intersect.film_name}"{punctuation_mark}\n')
+            )
+
+            if i >= show_error and i != quantity_intersections:
+                error_message += _(f"... and other {quantity_intersections - i} intersection(s).\n")
                 break
+
+        error_message += break_note
+
         return error_message
