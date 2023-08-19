@@ -1,83 +1,13 @@
 import datetime as dt
-from typing import Type
-
 
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils import timezone as tz
 from django.utils.translation import gettext as _
-from django.db.models import QuerySet, Q
 
 import utils
 from cinema.models import ScreenCinema, Showtime, Film
 from cinema_project import settings
-
-
-def get_overlapping_showtime(data_new_showtime: dict) -> QuerySet:
-    """
-    Return a QuerySet of overlapping existing showtime with new a showtime.
-    """
-    screen = data_new_showtime['screen']
-    film = data_new_showtime['film']
-    date_start = data_new_showtime['start_date']  # obj: datatime.date
-    date_end = data_new_showtime['end_date']  # obj: datatime.date
-    time_start = data_new_showtime['start_time']  # obj: datatime.time
-
-    datetime_start = dt.datetime.combine(date_start,
-                                         time_start,
-                                         tz.get_current_timezone())  # obj: datatime.datetime
-    datetime_end = get_time_end_showtime(date_end,
-                                         time_start,
-                                         film.duration)  # obj: datatime.datetime
-    time_end = datetime_end.time()  # obj: datatime.time
-
-    dt_range = (datetime_start, datetime_end)
-    cross_showtime = Showtime.objects.filter(Q(start__range=dt_range)
-                                             | Q(end__range=dt_range),
-                                             screen=screen
-                                             )
-    # filter settings
-    if time_start < time_end:
-        filter_time_start = Q(start__time__range=(time_start, time_end))
-        filter_time_end = Q(end__time__range=(time_start, time_end))
-    else:
-        filter_time_start_to_midnight = Q(start__time__range=(time_start, dt.time.max))
-        filter_time_start_past_midnight = Q(start__time__range=(dt.time.min, time_end))
-        filter_time_start = filter_time_start_to_midnight | filter_time_start_past_midnight
-        filter_time_end = Q(end__time__range=(dt.time.min, time_end))
-
-    return cross_showtime.filter(filter_time_start | filter_time_end)
-
-
-def check_date_time_showtime(data_new_showtime: dict,
-                             validation_error: Type[ValidationError]):
-    """
-
-    """
-    date_start = data_new_showtime['start_date']  # obj: datatime.date
-    date_end = data_new_showtime['start_date']  # obj: datatime.date
-    time_start = data_new_showtime['start_time']  # obj: datatime.time
-
-    current_timezone = tz.get_current_timezone()
-    datetime_start = dt.datetime.combine(date_start,
-                                         time_start,
-                                         current_timezone)  # obj: datatime.datetime
-    # check Start datetime
-    if datetime_start < tz.localtime():
-        raise validation_error('ATTENTION: Unable to create a showtime in the past' )
-
-    # check End date
-    if date_start > date_end:
-        raise validation_error(
-            "ATTENTION: END DATE can't be earlier than START DATE"
-        )
-
-    cross_showtime = get_overlapping_showtime(data_new_showtime)
-    if cross_showtime:
-        raise validation_error(
-            f'ATTENTION: Showtime overlap with {cross_showtime.count()} sessions. '
-            f'Nearest: {cross_showtime.first()}'
-        )
 
 
 class ScreenField(forms.CharField):
@@ -94,10 +24,10 @@ class ScreenForm(forms.ModelForm):
         fields = ("name", "capacity")
 
 
-class FilmRentalCreationForm(forms.Form):
+class FilmDistributionCreationForm(forms.Form):
     """
-    This object represents a form for creating a single showtime or cycle of showtime
-    that start at a certain time.
+    This object represents a form for creating a single showtime
+    or film distribution (cycle of showtime) that start at a certain time.
     """
     film = forms.ModelChoiceField(
         queryset=Film.objects.filter(to_rental=True),
@@ -141,19 +71,41 @@ class FilmRentalCreationForm(forms.Form):
 
     )
 
-    def clean_release_day(self) -> tz.datetime.date:
+    def clean_release_day(self) -> dt.date:
+        """
+        The `release_day` field undergoes extra cleaning.
+        If the release day of film distribution is less than the current day,
+        an error will be raised.
+        """
         release_day: dt.date = self.cleaned_data.get('release_day')
         if error := utils.has_error_showtime_start(release_day):
             raise ValidationError('👆🏽' + error)
         return release_day
 
-    def clean_last_day(self) -> tz.datetime.date:
+    def clean_last_day(self) -> dt.date:
+        """
+        The `last_day` field undergoes extra cleaning.
+        If the last day of film distribution is less than the current day,
+        an error will be raised.
+        """
         last_day: dt.date = self.cleaned_data.get('last_day')
         if error := utils.has_error_showtime_start(last_day):
             raise ValidationError('👆🏽' + error)
         return last_day
 
     def clean(self) -> dict | None:
+        """
+        Hook for doing extra form-wide cleaning.
+
+        If the last day of distribution film is earlier than the release day,
+        then an error will be added to the field `last_day`.
+
+        If the start of showtime is less than the current moment,
+        then ah error will be added to the filed `start_minute`.
+
+        If film distribution that is being created has intersections
+        with existing showtimes, an error will be raised.
+        """
         cleaned_data = super().clean()
         release_day: dt.date = cleaned_data.get('release_day')
         last_day: dt.date = cleaned_data.get('last_day')
@@ -179,30 +131,29 @@ class FilmRentalCreationForm(forms.Form):
                     screen, film, start_datetime, last_day, settings.TECHNICAL_BREAK_AFTER_SHOWTIME
                 )
             ):
-                raise ValidationError(error)
+                raise ValidationError('📛️\n' + error)
 
             cleaned_data['start_datetime'] = start_datetime
             return cleaned_data
 
     def create_film_distribution(self) -> None:
+        """
+        Method for creating a film distribution (cycle of showtime or single showtime).
+        Use if the form is validated.
+        """
         film: Film = self.cleaned_data['film']
         release_day: dt.date = self.cleaned_data['release_day']
         last_day: dt.date = self.cleaned_data['last_day']
-        start_datetime = self.cleaned_data['start_datetime']
-        screen = self.cleaned_data['screen']
+        start_datetime: dt.datetime = self.cleaned_data['start_datetime']
+        screen: ScreenCinema = self.cleaned_data['screen']
         price = self.cleaned_data['price']
 
         bulk_showtime = []
         for day in range((last_day - release_day).days + 1):
             start = start_datetime + dt.timedelta(days=day)
+            end = start + film.duration
             bulk_showtime.append(
-                Showtime(
-                    film=film,
-                    start=start,
-                    end=(start + film.duration),
-                    screen=screen,
-                    price=price,
-                )
+                Showtime(film=film, start=start, end=end, screen=screen, price=price)
             )
         Showtime.objects.bulk_create(bulk_showtime)
 

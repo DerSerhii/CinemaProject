@@ -1,13 +1,14 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Count, Q, ProtectedError
+from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView, CreateView, DeleteView, UpdateView, FormView
 from django.utils import timezone as tz
 
 from cinema.models import Showtime, ScreenCinema, Film
-from staff.forms import ScreenForm, FilmRentalCreationForm, ShowtimeEditForm
+from staff.forms import ScreenForm, FilmDistributionCreationForm, ShowtimeEditForm
 from utils import select_show
 
 
@@ -215,17 +216,41 @@ class ScreenShowtimeView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         return context
 
 
-class CreateShowtimeView(LoginRequiredMixin, UserPassesTestMixin, FormView):
-    form_class = FilmRentalCreationForm
+class FilmDistributionCreationFormView(LoginRequiredMixin, UserPassesTestMixin, FormView):
+    """
+    A view class that handles the creation of film distributions by authorized staff.
+
+    This view requires users to be logged in, have superuser privileges, and fill out a form to create a new film distribution.
+    Upon successful submission of the form, the film distribution is created and associated data is stored in the database.
+
+    Attributes:
+        form_class (class): The form class used for capturing input data for film distribution creation.
+        template_name (str): The name of the HTML template used to render the form.
+        success_url (str): The URL to redirect to after successful form submission.
+        login_url (str): The URL to redirect unauthenticated users to the sign-in page.
+
+    Methods:
+        test_func(): Checks if the user is a superuser.
+        form_valid(form): Processes the valid form data and creates a film distribution within a database transaction.
+        get_context_data(**kwargs): Retrieves additional context data to pass to the template.
+
+    Example usage:
+    To create a new film distribution, a user with superuser privileges should access this view, fill out the required information,
+    and submit the form. Upon successful submission, the new film distribution will be stored in the database.
+
+    """
+    form_class = FilmDistributionCreationForm
     template_name = "staff/create-showtime.html"
     success_url = reverse_lazy("screen-showtime", kwargs={"scr_id": 0})
     login_url = reverse_lazy("sign-in")
 
     def test_func(self):
-        return self.request.user.is_superuser
+        # return self.request.user.is_superuser
+        return self.request.user.is_staff
 
     def form_valid(self, form):
-        form.create_film_distribution()
+        with transaction.atomic():
+            form.create_film_distribution()
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):

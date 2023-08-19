@@ -4,8 +4,8 @@ The module represents test cases for functions of module `helpers`.
 
 import datetime as dt
 
-from django.utils import timezone as tz
 from django.test import TestCase
+from django.utils import timezone as tz
 
 import utils
 from cinema.models import ScreenCinema, Film, Showtime

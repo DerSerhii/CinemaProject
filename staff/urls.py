@@ -3,7 +3,7 @@
 from django.urls import path
 
 from .views import FilmView, ScreenShowtimeView, CreateScreenView, \
-    RemoveScreenView, EditScreenView, CreateShowtimeView, RemoveShowtimeView, \
+    RemoveScreenView, EditScreenView, FilmDistributionCreationFormView, RemoveShowtimeView, \
     EditShowtimeView, CreateFilmView, EditFilmView, RemoveFilmView, ScreenShowtimeAllView
 
 urlpatterns = [
@@ -16,7 +16,7 @@ urlpatterns = [
     path('add-screen/', CreateScreenView.as_view(), name='add-screen'),
     path('edit-screen/<int:scr_id>/', EditScreenView.as_view(), name='edit-screen'),
     path('del-screen/<int:scr_id>/', RemoveScreenView.as_view(), name='del-screen'),
-    path('add-showtime/', CreateShowtimeView.as_view(), name='add-showtime'),
+    path('add-showtime/', FilmDistributionCreationFormView.as_view(), name='add-showtime'),
     path('edit-showtime/<int:show_id>/', EditShowtimeView.as_view(), name='edit-showtime'),
     path('del-showtime/<int:show_id>/', RemoveShowtimeView.as_view(), name='del-showtime'),
 ]
