@@ -79,7 +79,12 @@ class CinemaUser(AbstractUser):
 
 class SpectatorProfile(models.Model):
     """
-    Model represents a profile of a spectator.
+    Model representing a spectator's profile.
+    This model is used to store advanced attributes for users
+    with the 'Spectator' role in the cinema system.
+
+    Each 'SpectatorProfile' is associated with a user and contains
+    information such as the user's account balance.
     """
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -105,4 +110,3 @@ class SpectatorProfile(models.Model):
 
     def get_absolute_url(self):
         return reverse('profile', kwargs={'spec_id': self.pk})
-
