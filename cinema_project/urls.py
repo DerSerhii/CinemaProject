@@ -1,15 +1,14 @@
 """ DIPLOMA URL Configuration """
 
+from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 
-from cinema_project import settings
-
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('cinema.urls')),
-    path('staff/', include('staff.urls')),
+    path('cinema_admin/', include('cinema_admin.urls')),
     path('api/', include('api.urls')),
 ]
 

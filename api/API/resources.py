@@ -9,7 +9,7 @@ from api.API.filters import SessionsFilter
 from api.API.permissions import IsAdminOrReadOnly
 from api.API.serializers import SpectatorSerializer, ScreenCinemaSerializer, \
     ShowtimeSerializers, FilmSerializer, ShowtimeStaffSerializers
-from cinema.models import Spectator, ScreenCinema, Showtime, Film
+from cinema.models import ScreenHall, Showtime, Film
 
 
 class CinemaAPIListPagination(PageNumberPagination):
@@ -61,7 +61,7 @@ class ShowtimeStaffViewSet(ModelViewSet):
         self.perform_create(serializer)
 
 class ScreenCinemaViewSet(ModelViewSet):
-    queryset = ScreenCinema.objects.all()
+    queryset = ScreenHall.objects.all()
     serializer_class = ScreenCinemaSerializer
     permission_classes = (IsAdminOrReadOnly, )
     pagination_class = CinemaAPIListPagination

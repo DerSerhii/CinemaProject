@@ -4,7 +4,8 @@ from rest_framework import serializers
 from rest_framework.relations import PrimaryKeyRelatedField
 from rest_framework.validators import UniqueValidator
 
-from cinema.models import Spectator, Showtime, ScreenCinema, Film
+from cinema.models import Showtime, ScreenHall, Film
+from cinema_admin.models import CinemaUser
 
 
 class SpectatorSerializer(serializers.ModelSerializer):
@@ -15,7 +16,7 @@ class SpectatorSerializer(serializers.ModelSerializer):
                                       required=True)
 
     class Meta:
-        model = Spectator
+        model = CinemaUser
         fields = ('username',
                   'first_name',
                   'last_name',
@@ -33,7 +34,7 @@ class SpectatorSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop("password2")
         password = validated_data.pop("password")
-        customer = Spectator(**validated_data)
+        customer = CinemaUser(**validated_data)
         customer.set_password(password)
         customer.save()
         return customer
@@ -96,7 +97,7 @@ class ShowtimeStaffSerializers(serializers.ModelSerializer):
 
 class ScreenCinemaSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ScreenCinema
+        model = ScreenHall
         fields = "__all__"
 
 

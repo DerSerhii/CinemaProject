@@ -8,7 +8,7 @@ import datetime as dt
 from django.utils import timezone as tz
 from django.utils.translation import gettext as _
 
-from cinema.models import ScreenCinema, Film
+from cinema.models import ScreenHall, Film
 from .helpers import find_showtime_intersections
 
 
@@ -41,7 +41,7 @@ def has_error_last_day_distribution(start: dt.date, last: dt.date) -> str | None
 
 
 def has_error_intersection_with_existing_showtimes(
-        screen: ScreenCinema,
+        screen: ScreenHall,
         film: Film,
         start_datetime: dt.datetime,
         last_day: dt.date,

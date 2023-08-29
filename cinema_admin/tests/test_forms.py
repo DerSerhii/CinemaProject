@@ -9,7 +9,7 @@ from django.utils import timezone as tz
 from django.utils.translation import gettext as _
 
 from cinema.models import ScreenCinema, Film, Showtime
-from staff.forms import FilmDistributionCreationForm
+from cinema_admin.forms import FilmDistributionCreationForm
 
 
 class FilmDistributionCreationFormTestCase(TestCase):

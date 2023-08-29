@@ -8,7 +8,7 @@ from itertools import chain
 
 from django.utils import timezone as tz
 
-from cinema.models import Showtime, ScreenCinema, Film
+from cinema.models import Showtime, ScreenHall, Film
 
 
 TimeRange = namedtuple('TimeRange', ['start', 'end'])
@@ -66,7 +66,7 @@ def get_timerange_new_showtimes(
 
 
 def find_showtime_intersections(
-        screen: ScreenCinema,
+        screen: ScreenHall,
         film: Film,
         start_datetime: dt.datetime,
         last_day: dt.date,

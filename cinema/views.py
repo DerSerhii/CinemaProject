@@ -14,7 +14,8 @@ from django.views.generic import TemplateView, CreateView, UpdateView, DetailVie
 from django.utils import timezone as tz
 
 from cinema.forms import SignUpForm, BuyTicketForm
-from cinema.models import Showtime, Film, Spectator, Ticket
+from cinema.models import Showtime, Film, Ticket
+from cinema_admin.models import SpectatorProfile
 
 
 class CinemaHomePageView(TemplateView):
@@ -120,7 +121,7 @@ class Logout(LogoutView):
 class ProfileSpectatorView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     pk_url_kwarg = "spec_id"
     template_name = "cinema/profile.html"
-    model = Spectator
+    model = SpectatorProfile
     fields = ("first_name", "last_name", "email")
     login_url = reverse_lazy("sign-in")
     success_message = "You have successfully modified your profile"
@@ -129,7 +130,7 @@ class ProfileSpectatorView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
 class WalletSpectatorView(LoginRequiredMixin, UpdateView):
     pk_url_kwarg = "spec_id"
     template_name = "cinema/wallet.html"
-    model = Spectator
+    model = SpectatorProfile
     fields = ("wallet", )
     login_url = reverse_lazy("sign-in")
     success_url = reverse_lazy("cinema-home")

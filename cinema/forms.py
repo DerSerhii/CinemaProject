@@ -1,12 +1,13 @@
 from django.contrib.auth.forms import UserCreationForm
 from django import forms
 
-from .models import Spectator, Ticket
+from .models import Ticket
+from cinema_admin.models import CinemaUser
 
 
 class SignUpForm(UserCreationForm):
     class Meta:
-        model = Spectator
+        model = CinemaUser
         fields = ("username", "first_name", "last_name", "email",
                   "password1", "password2")
         widgets = {

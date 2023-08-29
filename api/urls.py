@@ -9,7 +9,6 @@ router.register(r'screen-cinema', ScreenCinemaViewSet)
 router.register(r'film', FilmViewSet)
 router.register(r'showtime', ShowtimeViewSet)
 
-
 urlpatterns = [
     path('token-auth/', views.obtain_auth_token),
     path('', include(router.urls)),

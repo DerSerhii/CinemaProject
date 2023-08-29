@@ -1,0 +1,53 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 14.9 (Ubuntu 14.9-0ubuntu0.22.04.1)
+-- Dumped by pg_dump version 14.9 (Ubuntu 14.9-0ubuntu0.22.04.1)
+
+-- Started on 2023-08-23 16:44:44 EEST
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- TOC entry 3411 (class 0 OID 165172)
+-- Dependencies: 239
+-- Data for Name: cinema_film; Type: TABLE DATA; Schema: public; Owner: cinema_user
+--
+
+INSERT INTO public.cinema_film (id, title, duration, is_active, release_year, description, starring, director, poster) VALUES (1, 'Where The Crawdads Sing', '02:06:00', true, 2022, 'Where the Crawdads Sing tells the story of Kya, an abandoned girl who raised herself to adulthood in the dangerous marshlands of North Carolina.', 'Daisy Edgar-Jones, Harris Dickinson, David Strathairn', 'Olivia Newman', 'poster/2022/07/31/Where_the_crawdads_sing.png');
+INSERT INTO public.cinema_film (id, title, duration, is_active, release_year, description, starring, director, poster) VALUES (2, 'Bullet Train', '02:06:00', true, 2022, 'Based on the Japanese novel, Maria Beetle by Kotaro Isaka, five assassins find themselves on a fast-moving bullet train from Tokyo to Morioka with only a few stops in between. They discover their missions are not unrelated to one another. The question becomes, who will make it off the train alive and what awaits them at the terminal station?!', 'Aaron Taylor-Johnson, Brad Pitt, Andrew Koji, Hiroyuki Sanada, Joey King, Benito A Martínez Ocasio, Michael Shannon, Brian Tyree Henry', 'David Leitch', 'poster/2022/08/03/Bullet_train.png');
+INSERT INTO public.cinema_film (id, title, duration, is_active, release_year, description, starring, director, poster) VALUES (3, 'Thor: Love and Thunder', '01:59:00', true, 2022, '“Thor: Love and Thunder,” offering long-awaited clues to what’s in store for the God of Thunder. The film finds Thor (Chris Hemsworth) on a journey unlike anything he’s ever faced – a quest for inner peace. But his retirement is interrupted by a galactic killer known as Gorr the God Butcher (Christian Bale), who seeks the extinction of the gods. To combat the threat, Thor enlists the help of King Valkyrie (Tessa Thompson), Korg (Taika Waititi) and ex-girlfriend Jane Foster (Natalie Portman), who – to Thor’s surprise – inexplicably wields his magical hammer, Mjolnir, as the Mighty Thor. Warning | contains a sequence of flashing lights which might affect customers who are susceptible to photosensitive epilepsy.', 'Dave Bautista, Chris Hemsworth, Christian Bale, Karen Gillan, Natalie Portman, Taika Waititi, Chris Pratt, Russell Crowe', 'Taika Waititi', 'poster/2022/08/03/Thor_Love_and_thunder.png');
+INSERT INTO public.cinema_film (id, title, duration, is_active, release_year, description, starring, director, poster) VALUES (4, 'The Bad Guys', '01:40:00', true, 2022, 'Nobody has ever failed so hard at trying to be good as The Bad Guys. In the new action-comedy from DreamWorks Animation, based on the New York Times best-selling book series, a crackerjack criminal crew of animal outlaws are about to attempt their most challenging con yet—becoming model citizens. Never have there been five friends as infamous as The Bad Guys—dashing pickpocket Mr. Wolf (Academy Award® winner Sam Rockwell, Three Billboards Outside Ebbing, Missouri), seen-it-all safecracker Mr. Snake (Marc Maron, GLOW), chill master-of-disguise Mr. Shark (Craig Robinson, Hot Tub Time Machine franchise), short-fused “muscle” Mr. Piranha (Anthony Ramos, In the Heights) and sharp-tongued expert hacker Ms. Tarantula (Awkwafina, Crazy Rich Asians), aka “Webs.” But when, after years of countless heists and being the world’s most-wanted villains, the gang is finally caught, Mr. Wolf brokers a deal (that he has no intention of keeping) to save them all from prison: The Bad Guys will go good. Under the tutelage of their mentor Professor Marmalade (Richard Ayoade, Paddington 2), an arrogant (but adorable!) guinea pig, The Bad Guys set out to fool the world that they’ve been transformed. Along the way, though, Mr. Wolf begins to suspect that doing good for real may give him what he’s always secretly longed for: acceptance. So when a new villain threatens the city, can Mr. Wolf persuade the rest of the gang to become … The Good Guys? The film co-stars Zazie Beetz (Joker), Lilly Singh (Bad Moms) and Emmy winner Alex Borstein (The Marvelous Mrs. Maisel).', 'Zazie Beetz, Marc Maron, Richard Ayoade, Lilly Singh, Alex Borstein, Awkwafina , Sam Rockwell, Craig Robinson, Anthony Ramos', 'Pierre Perifel', 'poster/2022/08/03/The_bad_guys.png');
+INSERT INTO public.cinema_film (id, title, duration, is_active, release_year, description, starring, director, poster) VALUES (5, 'Top Gun: Maverick', '02:11:00', true, 2022, 'Jon Hamm, Lewis Pullman, Miles Teller, Tom Cruise, Ed Harris, Jennifer Connelly, Glen Powell, Charles Parnell, Danny Ramirez, Jay Ellis, Bashir Salahuddin, Monica Barbaro, Greg Tarzan Davis, Val Kilme', 'Jon Hamm, Lewis Pullman, Miles Teller, Tom Cruise, Ed Harris, Jennifer Connelly, Glen Powell, Charles Parnell, Danny Ramirez, Jay Ellis, Bashir Salahuddin, Monica Barbaro, Greg Tarzan Davis, Val Kilme', 'Joseph Kosinski', 'poster/2022/08/03/Top_Gun_Maverick.png');
+INSERT INTO public.cinema_film (id, title, duration, is_active, release_year, description, starring, director, poster) VALUES (6, 'The Railway Children Return', '01:35:00', true, 2022, 'Inspired by one of the most beloved British family films of all time, The Railway Children Return is an enchanting, moving and heart-warming adventure for a new generation. 1944 – As life in Britain’s cities becomes increasingly perilous, three evacuee children – Lily, Pattie and Ted Watts – are sent by their mother from Salford to the Yorkshire village of Oakworth. There to meet them on the train station platform are Bobbie Waterbury (Jenny Agutter, reprising her iconic role in the original film), her daughter, Annie and grandson Thomas, and with their help the evacuees are soon settling into their new life in the countryside. When the children discover injured American soldier Abe hiding out in the railyard at Oakworth Station, they are thrust into a dangerous quest to assist their new friend who, like them, is a long way from home.', 'Jenny Agutter, Sheridan Smith, Gabriel Freilich, Joanne James, Tom Courtenay', 'Morgan Matthews', 'poster/2022/08/05/Theatrical_poster_for_The_Railway_Children_Return.png');
+INSERT INTO public.cinema_film (id, title, duration, is_active, release_year, description, starring, director, poster) VALUES (7, 'Minions: The Rise of Gru', '01:28:00', true, 2022, 'This summer, from the biggest global animated franchise in history, comes the origin story of how the world’s greatest supervillain first met his iconic Minions, forged cinema’s most despicable crew and faced off against the most unstoppable criminal force ever assembled in Minions: The Rise of Gru.', 'Lucy Lawless, Dolph Lundgren, Alan Arkin, Danny Trejo, Taraji P. Henson, Julie Andrews, Russell Brand, Jean-Claude Van Damme, RZA , Michelle Yeoh, Steve Carell', 'Jonathan Del Val, Brad Ableson, Kyle Balda', 'poster/2022/08/07/MInioms.png');
+INSERT INTO public.cinema_film (id, title, duration, is_active, release_year, description, starring, director, poster) VALUES (8, 'Elvis', '02:40:00', true, 2022, 'From Oscar-nominated visionary filmmaker Baz Luhrmann comes Warner Bros. Pictures’ drama “Elvis,” starring Austin Butler and Oscar winner Tom Hanks. The film explores the life and music of Elvis Presley (Butler), seen through the prism of his complicated relationship with his enigmatic manager, Colonel Tom Parker (Hanks). The story delves into the complex dynamic between Presley and Parker spanning over 20 years, from Presley’s rise to fame to his unprecedented stardom, against the backdrop of the evolving cultural landscape and loss of innocence in America. Central to that journey is one of the most significant and influential people in Elvis’s life, Priscilla Presley (Olivia DeJonge).', 'Austin Butler, Olivia DeJonge, Xavier Samuel, Alton Mason, Tom Hanks, Dacre Montgomery', 'Baz Luhrmann', 'poster/2022/08/08/Elvis.png');
+INSERT INTO public.cinema_film (id, title, duration, is_active, release_year, description, starring, director, poster) VALUES (9, 'Nope', '02:10:00', true, 2022, '“What’s a bad miracle?” Oscar® winner Jordan Peele disrupted and redefined modern horror with Get Out and then Us. Now, he reimagines the summer movie with a new pop nightmare: the expansive horror epic, Nope. The film reunites Peele with Oscar® winner Daniel Kaluuya (Get Out, Judas and the Black Messiah), who is joined by Keke Palmer (Hustlers, Alice) and Oscar® nominee Steven Yeun (Minari, Okja) as residents in a lonely gulch of inland California who bear witness to an uncanny and chilling discovery. Nope, which co-stars Michael Wincott (Hitchcock, Westworld) and Brandon Perea (The OA, American Insurrection), is written and directed by Jordan Peele and is produced by Ian Cooper (Us, Candyman) and Jordan Peele for Monkeypaw Productions', 'Keke Palmer, Steven Yeun, Michael Wincott, Brandon Perea, Daniel Kaluuya', 'Jordan Peele', 'poster/2022/08/13/Nope.png');
+INSERT INTO public.cinema_film (id, title, duration, is_active, release_year, description, starring, director, poster) VALUES (10, 'Test Film 2 + 0.5 = 3 hour', '02:30:00', true, 2023, 'Test Film', 'Test Film', 'Test Film', NULL);
+
+
+--
+-- TOC entry 3418 (class 0 OID 0)
+-- Dependencies: 240
+-- Name: cinema_film_id_seq; Type: SEQUENCE SET; Schema: public; Owner: cinema_user
+--
+
+SELECT pg_catalog.setval('public.cinema_film_id_seq', 10, true);
+
+
+-- Completed on 2023-08-23 16:44:44 EEST
+
+--
+-- PostgreSQL database dump complete
+--
+

@@ -7,13 +7,13 @@ from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView, CreateView, DeleteView, UpdateView, FormView
 from django.utils import timezone as tz
 
-from cinema.models import Showtime, ScreenCinema, Film
-from staff.forms import ScreenForm, FilmDistributionCreationForm, ShowtimeEditForm
+from cinema.models import Showtime, ScreenHall, Film
+from cinema_admin.forms import ScreenForm, FilmDistributionCreationForm, ShowtimeEditForm
 from utils import select_show
 
 
 class FilmView(LoginRequiredMixin, UserPassesTestMixin, ListView):
-    template_name = "staff/film.html"
+    template_name = "cinema_admin/film.html"
     context_object_name = "films"
     queryset = Film.objects.all()
     paginate_by = 3
@@ -32,7 +32,7 @@ class FilmView(LoginRequiredMixin, UserPassesTestMixin, ListView):
 class CreateFilmView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     model = Film
     fields = "__all__"
-    template_name = "staff/create-film.html"
+    template_name = "cinema_admin/create-film.html"
     success_url = reverse_lazy("film")
     login_url = reverse_lazy("sign-in")
 
@@ -48,7 +48,7 @@ class CreateFilmView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
 
 class EditFilmView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     pk_url_kwarg = "film_id"
-    template_name = "staff/edit-film.html"
+    template_name = "cinema_admin/edit-film.html"
     model = Film
     fields = "__all__"
     success_url = reverse_lazy("film")
@@ -94,7 +94,7 @@ class RemoveFilmView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
 
 class ScreenShowtimeAllView(LoginRequiredMixin, UserPassesTestMixin, ListView):
-    template_name = 'staff/screen-all.html'
+    template_name = 'cinema_admin/screen-all.html'
     model = Showtime
     context_object_name = 'showtimes'
     login_url = reverse_lazy("sign-in")
@@ -105,7 +105,7 @@ class ScreenShowtimeAllView(LoginRequiredMixin, UserPassesTestMixin, ListView):
 
 class CreateScreenView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     form_class = ScreenForm
-    template_name = "staff/create-screen.html"
+    template_name = "cinema_admin/create-screen.html"
     success_url = reverse_lazy("screen-showtime", kwargs={"scr_id": 0})
     login_url = reverse_lazy("sign-in")
 
@@ -121,8 +121,8 @@ class CreateScreenView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
 
 class EditScreenView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     pk_url_kwarg = "scr_id"
-    template_name = "staff/edit-screen.html"
-    model = ScreenCinema
+    template_name = "cinema_admin/edit-screen.html"
+    model = ScreenHall
     fields = "__all__"
     success_url = reverse_lazy("screen-showtime", kwargs={"scr_id": 0})
     login_url = reverse_lazy("sign-in")
@@ -143,7 +143,7 @@ class EditScreenView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
 
 class RemoveScreenView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     pk_url_kwarg = "scr_id"
-    model = ScreenCinema
+    model = ScreenHall
     success_url = reverse_lazy("screen-showtime", kwargs={"scr_id": 0})
     login_url = reverse_lazy("sign-in")
 
@@ -168,7 +168,7 @@ class RemoveScreenView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
 
 class ScreenShowtimeView(LoginRequiredMixin, UserPassesTestMixin, ListView):
-    template_name = 'staff/admin-home.html'
+    template_name = 'cinema_admin/cinema_admin-home.html'
     context_object_name = 'showtime'
     login_url = reverse_lazy("sign-in")
 
@@ -210,7 +210,7 @@ class ScreenShowtimeView(LoginRequiredMixin, UserPassesTestMixin, ListView):
 
         context['day_selected'] = self.select_day
         context['screen_selected'] = self.screen_id
-        context['screens'] = ScreenCinema.objects.annotate(count=showtime)
+        context['screens'] = ScreenHall.objects.annotate(count=showtime)
         context['screens_all'] = Showtime.objects.filter(showtime_all).count()
 
         return context
@@ -218,7 +218,7 @@ class ScreenShowtimeView(LoginRequiredMixin, UserPassesTestMixin, ListView):
 
 class FilmDistributionCreationFormView(LoginRequiredMixin, UserPassesTestMixin, FormView):
     """
-    A view class that handles the creation of film distributions by authorized staff.
+    A view class that handles the creation of film distributions by authorized cinema_admin.
 
     This view requires users to be logged in, have superuser privileges, and fill out a form to create a new film distribution.
     Upon successful submission of the form, the film distribution is created and associated data is stored in the database.
@@ -240,7 +240,7 @@ class FilmDistributionCreationFormView(LoginRequiredMixin, UserPassesTestMixin, 
 
     """
     form_class = FilmDistributionCreationForm
-    template_name = "staff/create-showtime.html"
+    template_name = "cinema_admin/create-showtime.html"
     success_url = reverse_lazy("screen-showtime", kwargs={"scr_id": 0})
     login_url = reverse_lazy("sign-in")
 
@@ -261,7 +261,7 @@ class FilmDistributionCreationFormView(LoginRequiredMixin, UserPassesTestMixin, 
 
 class EditShowtimeView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     pk_url_kwarg = "show_id"
-    template_name = "staff/edit-showtime.html"
+    template_name = "cinema_admin/edit-showtime.html"
     model = Showtime
     form_class = ShowtimeEditForm
     success_url = reverse_lazy("screen-showtime", kwargs={"scr_id": 0})

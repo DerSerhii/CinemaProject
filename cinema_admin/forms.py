@@ -1,13 +1,28 @@
 import datetime as dt
 
 from django import forms
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.utils import timezone as tz
 from django.utils.translation import gettext as _
 
 import utils
-from cinema.models import ScreenCinema, Showtime, Film
-from cinema_project import settings
+from cinema.models import ScreenHall, Showtime, Film
+from cinema_admin.models import CinemaUser, UserRole
+
+
+class AdminCinemaUserForm(forms.ModelForm):
+    class Meta:
+        model = CinemaUser
+        exclude = ['role']
+
+    def save(self, commit=True):
+        form = super().save(commit=False)
+        form.role = UserRole.ADMIN
+        form.set_password(self.cleaned_data['password'])
+        if commit:
+            form.save()
+        return form
 
 
 class ScreenField(forms.CharField):
@@ -20,7 +35,7 @@ class ScreenForm(forms.ModelForm):
     name = ScreenField(max_length=20)
 
     class Meta:
-        model = ScreenCinema
+        model = ScreenHall
         fields = ("name", "capacity")
 
 
@@ -30,7 +45,7 @@ class FilmDistributionCreationForm(forms.Form):
     or film distribution (cycle of showtime) that start at a certain time.
     """
     film = forms.ModelChoiceField(
-        queryset=Film.objects.filter(to_rental=True),
+        queryset=Film.objects.filter(is_active=True),
         empty_label=_('= select ='),
         widget=forms.Select(attrs={'class': 'form-input-film'}),
         label=_('Film')
@@ -57,7 +72,7 @@ class FilmDistributionCreationForm(forms.Form):
         initial=30
     )
     screen = forms.ModelChoiceField(
-        queryset=ScreenCinema.objects.all(),
+        queryset=ScreenHall.objects.all(),
         empty_label=_('= select ='),
         widget=forms.Select(attrs={'class': 'form-input-date-screen'}),
         label=_('Screen')
@@ -145,7 +160,7 @@ class FilmDistributionCreationForm(forms.Form):
         release_day: dt.date = self.cleaned_data['release_day']
         last_day: dt.date = self.cleaned_data['last_day']
         start_datetime: dt.datetime = self.cleaned_data['start_datetime']
-        screen: ScreenCinema = self.cleaned_data['screen']
+        screen: ScreenHall = self.cleaned_data['screen']
         price = self.cleaned_data['price']
 
         bulk_showtime = []
