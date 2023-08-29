@@ -2,9 +2,6 @@
 The module represents test cases for models of module `models`.
 """
 
-from multiprocessing import Process
-
-from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.test import TestCase
 
