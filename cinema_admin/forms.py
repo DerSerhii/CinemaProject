@@ -12,17 +12,28 @@ from cinema_admin.models import CinemaUser, UserRole
 
 
 class AdminCinemaUserForm(forms.ModelForm):
+    """
+    A custom form for creating administrator users in the cinema system.
+    This form extends the built-in ModelForm and customizes the saving process
+    to set the user role as 'Administrator' and hash the password.
+    """
+
     class Meta:
         model = CinemaUser
         exclude = ['role']
 
     def save(self, commit=True):
-        form = super().save(commit=False)
-        form.role = UserRole.ADMIN
-        form.set_password(self.cleaned_data['password'])
-        if commit:
-            form.save()
-        return form
+        """
+        Overridden method to set the user role, hash the password, and save the user.
+
+        Only administrators with different rights can be created from the administrative panel.
+        Spectators must be created by the spectators themselves during registration.
+        """
+        user = super().save(commit=False)
+        user.role = UserRole.ADMIN
+        user.set_password(self.cleaned_data['password'])
+        user.save()
+        return user
 
 
 class ScreenField(forms.CharField):
@@ -41,8 +52,8 @@ class ScreenForm(forms.ModelForm):
 
 class FilmDistributionCreationForm(forms.Form):
     """
-    This object represents a form for creating a single showtime
-    or film distribution (cycle of showtime) that start at a certain time.
+    This object represents a form for creating a film distribution
+    (single showtime or cycle of showtime that start at a certain time).
     """
     film = forms.ModelChoiceField(
         queryset=Film.objects.filter(is_active=True),
