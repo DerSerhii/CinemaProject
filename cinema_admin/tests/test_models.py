@@ -70,18 +70,16 @@ class SpectatorProfileModelTestCase(TestCase):
 
     def setUp(self):
         # Create a test user
-        self.user = CinemaUser.objects.create(
-            username='test_user', password='test_pass'
-        )
+        self.user = CinemaUser.objects.create(username='test_user', password='test_pass')
 
     def test_spectator_profile_creation(self):
         """
         Test the creation of a SpectatorProfile instance.
         """
         expected_spectator_profile = SpectatorProfile.objects.get(user_id=self.user.id)
-        self.assertEqual(expected_spectator_profile.user, self.user)
+        self.assertEqual(expected_spectator_profile.superuser, self.user)
         self.assertEqual(expected_spectator_profile.pk, self.user.pk)
-        self.assertEqual(expected_spectator_profile.user.username, self.user.username)
+        self.assertEqual(expected_spectator_profile.superuser.username, self.user.username)
         self.assertEqual(str(expected_spectator_profile), str(self.user))
 
     def test_get_absolute_url(self):

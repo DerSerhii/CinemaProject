@@ -109,7 +109,7 @@ class SignInView(SuccessMessageMixin, LoginView):
     success_message = "Hey, %(username)s! You have successfully logged in"
 
     def get_success_url(self):
-        if self.request.user.is_staff:
+        if self.request.superuser.is_staff:
             return reverse("screen-showtime", kwargs={"scr_id": 0})
         return reverse("cinema-home")
 
@@ -141,7 +141,7 @@ class WalletSpectatorView(LoginRequiredMixin, UpdateView):
         wallet_form = form.save(commit=False)
 
         # add money to existing
-        current_wallet = self.request.user.wallet
+        current_wallet = self.request.superuser.wallet
         wallet_form.wallet += current_wallet
 
         with transaction.atomic():
@@ -167,7 +167,7 @@ class BuyTicketView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         ticket = form.save(commit=False)
 
-        ticket.spectator = self.request.user
+        ticket.spectator = self.request.superuser
 
         showtime_id = self.kwargs[self.pk_url_kwarg]
         ticket.showtime = Showtime.objects.get(id=showtime_id)
@@ -197,12 +197,12 @@ class SpectatorPurchaseView(LoginRequiredMixin, ListView):
     login_url = reverse_lazy("sign-in")
 
     def get_queryset(self):
-        return Ticket.objects.filter(spectator=self.request.user)
+        return Ticket.objects.filter(spectator=self.request.superuser)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        visit = Ticket.objects.filter(spectator=self.request.user)
+        visit = Ticket.objects.filter(spectator=self.request.superuser)
 
         context["visit"] = visit.count()
         context["ticket"] = visit.aggregate(s=Sum(F("quantity")))["s"]

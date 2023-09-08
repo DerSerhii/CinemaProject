@@ -19,7 +19,7 @@ class FilmView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     paginate_by = 3
 
     def test_func(self):
-        return self.request.user.is_superuser
+        return self.request.superuser.is_superuser
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -37,7 +37,7 @@ class CreateFilmView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     login_url = reverse_lazy("sign-in")
 
     def test_func(self):
-        return self.request.user.is_superuser
+        return self.request.superuser.is_superuser
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -55,7 +55,7 @@ class EditFilmView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     login_url = reverse_lazy("sign-in")
 
     def test_func(self):
-        return self.request.user.is_superuser
+        return self.request.superuser.is_superuser
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -74,7 +74,7 @@ class RemoveFilmView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     login_url = reverse_lazy("sign-in")
 
     def test_func(self):
-        return self.request.user.is_superuser
+        return self.request.superuser.is_superuser
 
     def form_valid(self, form):
         success_url = self.get_success_url()
@@ -100,7 +100,7 @@ class ScreenShowtimeAllView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     login_url = reverse_lazy("sign-in")
 
     def test_func(self):
-        return self.request.user.is_superuser
+        return self.request.superuser.is_superuser
 
 
 class CreateScreenView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
@@ -110,7 +110,7 @@ class CreateScreenView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
     login_url = reverse_lazy("sign-in")
 
     def test_func(self):
-        return self.request.user.is_superuser
+        return self.request.superuser.is_superuser
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -128,7 +128,7 @@ class EditScreenView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     login_url = reverse_lazy("sign-in")
 
     def test_func(self):
-        return self.request.user.is_superuser
+        return self.request.superuser.is_superuser
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -148,7 +148,7 @@ class RemoveScreenView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     login_url = reverse_lazy("sign-in")
 
     def test_func(self):
-        return self.request.user.is_superuser
+        return self.request.superuser.is_superuser
 
     def form_valid(self, form):
         success_url = self.get_success_url()
@@ -178,7 +178,7 @@ class ScreenShowtimeView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         self.screen_id = None
 
     def test_func(self):
-        return self.request.user.is_superuser
+        return self.request.superuser.is_superuser
 
     def get_queryset(self):
         query_date_str = self.request.GET.get("day")
@@ -246,7 +246,7 @@ class FilmDistributionCreationFormView(LoginRequiredMixin, UserPassesTestMixin, 
 
     def test_func(self):
         # return self.request.user.is_superuser
-        return self.request.user.is_staff
+        return self.request.superuser.is_staff
 
     def form_valid(self, form):
         with transaction.atomic():
@@ -268,7 +268,7 @@ class EditShowtimeView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     login_url = reverse_lazy("sign-in")
 
     def test_func(self):
-        return self.request.user.is_superuser
+        return self.request.superuser.is_superuser
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -298,7 +298,7 @@ class RemoveShowtimeView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
     login_url = reverse_lazy("sign-in")
 
     def test_func(self):
-        return self.request.user.is_superuser
+        return self.request.superuser.is_superuser
 
     def form_valid(self, form):
         success_url = self.get_success_url()
