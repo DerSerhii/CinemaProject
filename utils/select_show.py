@@ -14,7 +14,7 @@ def get_selected_day(query_date: str) -> dt.datetime:
         showtime_day = dt.datetime.strptime(query_date, "%m/%d/%Y")
     else:
         showtime_day = tz.localtime(tz.now())
-    
+
     return showtime_day
 
 

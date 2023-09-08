@@ -12,6 +12,55 @@ from cinema_admin.forms import ScreenForm, FilmDistributionCreationForm, Showtim
 from utils import select_show
 
 
+class AdminHomePageView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    template_name = 'cinema_admin/admin-home.html'
+    context_object_name = 'showtime'
+    login_url = reverse_lazy("sign-in")
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.select_day = None
+        self.screen_id = None
+
+    def test_func(self):
+        return self.request.user.is_superuser
+
+    def get_queryset(self):
+        query_date_str = self.request.GET.get("day")
+        self.select_day = select_show.get_selected_day(query_date_str)
+        self.screen_id = 0
+
+        screen_filter = Q(screen=self.screen_id)
+        day_filter = Q(start__date=self.select_day)
+        sw_filter = screen_filter & day_filter if self.screen_id else day_filter
+
+        return Showtime.objects.filter(sw_filter).order_by('start'). \
+            exclude(start__lte=tz.localtime(tz.now()))
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # filter settings
+        filter_date = Q(showtime__start__date=self.select_day)
+        filter_time_start = Q(showtime__start__gte=tz.localtime(tz.now()))
+        filter_date_all = Q(start__date=self.select_day)
+        filter_time_start_all = Q(start__gte=tz.localtime(tz.now()))
+
+        if self.select_day.date() == tz.localtime(tz.now()).date():
+            showtime = Count('showtime', filter=filter_date & filter_time_start)
+            showtime_all = filter_date_all & filter_time_start_all
+        else:
+            showtime = Count('showtime', filter=filter_date)
+            showtime_all = filter_date_all
+
+        context['day_selected'] = self.select_day.date()
+        context['screen_selected'] = self.screen_id
+        context['screens'] = ScreenHall.objects.annotate(count=showtime)
+        context['screens_all'] = Showtime.objects.filter(showtime_all).count()
+
+        return context
+
+
 class FilmView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     template_name = "cinema_admin/film.html"
     context_object_name = "films"
@@ -19,7 +68,7 @@ class FilmView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     paginate_by = 3
 
     def test_func(self):
-        return self.request.superuser.is_superuser
+        return self.request.user.is_superuser
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -168,7 +217,7 @@ class RemoveScreenView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
 
 class ScreenShowtimeView(LoginRequiredMixin, UserPassesTestMixin, ListView):
-    template_name = 'cinema_admin/cinema_admin-home.html'
+    template_name = 'cinema_admin/admin-home.html'
     context_object_name = 'showtime'
     login_url = reverse_lazy("sign-in")
 
@@ -178,7 +227,7 @@ class ScreenShowtimeView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         self.screen_id = None
 
     def test_func(self):
-        return self.request.superuser.is_superuser
+        return self.request.user.is_superuser
 
     def get_queryset(self):
         query_date_str = self.request.GET.get("day")

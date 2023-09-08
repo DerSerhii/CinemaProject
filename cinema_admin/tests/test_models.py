@@ -44,7 +44,7 @@ class CinemaUserModelTestCase(TestCase):
         Staff is automatically assigned the role `Administrator`.
         """
         staff_user = CinemaUser.objects.create(
-            username='staff', password='staff_pass', is_staff=True
+            username='cinema_admin', password='staff_pass', is_staff=True
         )
         expected_role_for_staff = UserRole.ADMIN
         self.assertEqual(expected_role_for_staff, staff_user.role)

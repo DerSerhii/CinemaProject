@@ -50,7 +50,7 @@ def get_timerange_new_showtimes(
         film_duration: dt.timedelta,
         start_datetime: dt.datetime,
         last_day: dt.date
-    ) -> list[TimeRange[dt.datetime, dt.datetime, None]]:
+) -> list[TimeRange[dt.datetime, dt.datetime, None]]:
     """
     Helper function for forming the time range of new showtimes.
     Returns a list of `TimeRange` namedtuples, consisting of two `datetime.datetime` objects:
@@ -71,7 +71,7 @@ def find_showtime_intersections(
         start_datetime: dt.datetime,
         last_day: dt.date,
         technical_break: dt.timedelta
-    ) -> list[FilmTimeRange[dt.datetime, dt.datetime, str]]:
+) -> list[FilmTimeRange[dt.datetime, dt.datetime, str]]:
     """
     The helper function for finding intersections for the film distribution that is being created.
 

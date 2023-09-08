@@ -26,10 +26,8 @@ class CinemaHomePageView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
         # get the utils day from template
         select_day = self.get_selected_day()
-
         # add new context
         context["day_selected"] = select_day
         context["showtime"] = self.get_films_with_showtimes_on_this_day(select_day)
@@ -39,7 +37,7 @@ class CinemaHomePageView(TemplateView):
     def get_selected_day(self):
         """
         Returns the day selected by the user from the template.
-        if the choice has not yet been made, it returns the current date by default.
+        If the choice has not yet been made, it returns the current date by default.
         """
         if day := self.request.GET.get('day'):
             return tz.datetime.strptime(day, "%m/%d/%Y").date()
@@ -109,8 +107,8 @@ class SignInView(SuccessMessageMixin, LoginView):
     success_message = "Hey, %(username)s! You have successfully logged in"
 
     def get_success_url(self):
-        if self.request.superuser.is_staff:
-            return reverse("screen-showtime", kwargs={"scr_id": 0})
+        if self.request.user.is_staff:
+            return reverse('admin-home')
         return reverse("cinema-home")
 
 
