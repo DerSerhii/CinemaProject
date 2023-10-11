@@ -24,6 +24,17 @@ class CinemaHomepageAPIView(CinemaShowtimeMixin, ListAPIView):
 class AdminShowtimesAPIView(AdminShowtimeMixin, ListAPIView):
     serializer_class = AdminShowtimeSerializer
 
+    def get_serializer_context(self):
+        """
+        Adds additional context data to the serializer.
+        """
+        context = super().get_serializer_context()
+        screen_halls = self.get_screen_halls()
+        context['selected_day'] = self.selected_day
+        context['selected_screen'] = self.kwargs.get('screen_slug')
+        context['screens'] = screen_halls
+        context['amount_all_showtimes'] = sum([i.amount_showtimes for i in screen_halls])
+        return context
 
 class CinemaAPIListPagination(PageNumberPagination):
     page_size = 10

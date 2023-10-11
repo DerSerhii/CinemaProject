@@ -1,10 +1,10 @@
 import datetime as dt
 from itertools import groupby
 
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.utils import timezone as tz
 
-from cinema.models import Showtime, Film
+from cinema.models import Film, Showtime, ScreenHall
 
 
 class ShowtimeMixin:
@@ -152,3 +152,15 @@ class AdminShowtimeMixin(ShowtimeMixin):
         if screen_slug != 'all':
             return queryset.filter(screen__slug=screen_slug)
         return queryset
+
+    def get_screen_halls(self):
+        """
+        Retrieves and returns information about all screening halls (ScreenHall)
+        along with a count of associated Showtime instances for each hall.
+        """
+        return (
+            ScreenHall.objects.annotate(
+                amount_showtimes=Count('showtime', filter=self.showtime_filter_related)
+            )
+            .defer('capacity')
+        )

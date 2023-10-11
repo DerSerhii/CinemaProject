@@ -32,15 +32,6 @@ class AdminShowtimesView(LoginRequiredMixin, UserPassesTestMixin, AdminShowtimeM
         context['amount_all_showtimes'] = sum([i.amount_showtimes for i in screen_halls])
         return context
 
-    def get_screen_halls(self):
-        """
-        Retrieves and returns information about all screening halls (ScreenHall)
-        along with a count of associated Showtime instances for each hall.
-        """
-        return ScreenHall.objects.annotate(
-            amount_showtimes=Count('showtime', filter=self.showtime_filter_related)
-        ).defer('capacity')
-
 
 class FilmView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     template_name = "cinema_admin/film.html"
