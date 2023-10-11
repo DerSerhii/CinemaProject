@@ -67,6 +67,28 @@ class ShowtimeMixin:
 
         return showtime_filter_direct, showtime_filter_related
 
+    def get_showtime_queryset(self):
+        """
+        Retrieves a queryset of Showtime objects.
+        This method returns a queryset of Showtime objects, optimized for database queries.
+
+        :return: A QuerySet containing Showtime objects matching the specified filter criteria.
+        """
+        return (
+            Showtime.objects.select_related('film', 'screen')
+            .defer(
+                'end',
+                'price',
+                'attendance',
+                'film__duration',
+                'film__is_active',
+                'film__release_year',
+                'screen__slug',
+                'screen__capacity'
+            )
+            .filter(self.showtime_filter_direct)
+        )
+
 
 class CinemaShowtimeMixin(ShowtimeMixin):
     """
@@ -83,19 +105,15 @@ class CinemaShowtimeMixin(ShowtimeMixin):
         """
         Retrieves a list of films along with their showtimes for display on the page.
 
-        :returns: A list of tuples, where each tuple contains a film
-        and its showtimes for selected day.
+        This method constructs a list of tuples, where each tuple contains a Film object
+        and a list of Showtime objects.
+        The Showtime objects are grouped by their associated Film.
+        It returns this list to provide data for the view.
+
+        :return: A list of tuples, each containing a Film object,
+        and a list of associated Showtime objects.
         """
-        showtime_queryset = Showtime.objects.select_related('film', 'screen').defer(
-            'end',
-            'price',
-            'attendance',
-            'film__duration',
-            'film__is_active',
-            'film__release_year',
-            'screen__slug',
-            'screen__capacity'
-        ).filter(self.showtime_filter_direct)
+        showtime_queryset = self.get_showtime_queryset()
 
         sorted_showtimes = sorted(showtime_queryset, key=lambda f: f.film_id)
         context_films = []
@@ -105,20 +123,30 @@ class CinemaShowtimeMixin(ShowtimeMixin):
 
 
 class AdminShowtimeMixin(ShowtimeMixin):
+    """
+    Mixin class for handling showtime-related operations in the cinema admin panel.
+
+    This mixin extends the `ShowtimeMixin` and provides additional functionality
+    for retrieving a filtered queryset of Showtime objects based on the selected screen slug
+    for the cinema admin panel.
+
+    It includes methods for setting filter settings based on the selected day,
+    and for retrieving a filtered queryset of Showtime objects.
+    """
+
     def get_queryset(self):
         """
-        Retrieves a queryset of Showtime objects with selected related fields
-        and deferred loading of certain fields, based on the specified filter criteria.
+        Retrieves a filtered queryset of Showtime objects based on the selected screen slug.
+
+        This method gets the initial queryset of Showtime objects.
+        It then filters the queryset based on the provided `screen_slug` parameter from the URL.
+        If the `screen_slug` is not `all`, it filters the queryset
+        to include only Showtimes associated with the specified screen.
+        If 'screen_slug' is 'all', the full queryset is returned.
+
+        :return: A filtered queryset of Showtime objects.
         """
-        queryset = Showtime.objects.select_related('film', 'screen').defer(
-            'end',
-            'film__is_active',
-            'film__release_year',
-            'film__description',
-            'film__starring',
-            'film__director',
-            'screen__slug'
-        ).filter(self.showtime_filter_direct)
+        queryset = self.get_showtime_queryset()
 
         screen_slug = self.kwargs.get('screen_slug')
         if screen_slug != 'all':
