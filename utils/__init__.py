@@ -1,5 +1,5 @@
 """
-This package represents helper functions for use in the project.
+This package represents helper functions and mixins for use in the project.
 """
 
 from .helpers import (
@@ -16,6 +16,9 @@ from .errors import (
     has_error_intersection_with_existing_showtimes,
 )
 
+from .mixins import CinemaShowtimeMixin, AdminShowtimeMixin
+
+
 __all__ = [
     'TimeRange', 'FilmTimeRange',
     'derive_range_years',
@@ -25,5 +28,7 @@ __all__ = [
     'find_showtime_intersections',
     'has_error_showtime_start',
     'has_error_last_day_distribution',
-    'has_error_intersection_with_existing_showtimes'
+    'has_error_intersection_with_existing_showtimes',
+    'CinemaShowtimeMixin',
+    'AdminShowtimeMixin'
 ]

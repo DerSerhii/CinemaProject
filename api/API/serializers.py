@@ -1,11 +1,78 @@
 from django.contrib.auth.password_validation import validate_password
-from django.utils import timezone as tz
 from rest_framework import serializers
-from rest_framework.relations import PrimaryKeyRelatedField
-from rest_framework.validators import UniqueValidator
+from rest_framework.fields import CharField
 
 from cinema.models import Showtime, ScreenHall, Film
 from cinema_admin.models import CinemaUser
+
+
+class FilmSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Film model.
+    """
+
+    class Meta:
+        model = Film
+        fields = '__all__'
+
+
+class ShowtimeForCinemaHomepageSerializer(serializers.ModelSerializer):
+    """
+    Serializer for displaying showtime details on the Cinema Homepage API.
+    """
+    screen = CharField(source='screen.name')
+
+    class Meta:
+        model = Showtime
+        fields = ('screen', 'start')
+
+
+class CinemaShowtimeSerializer(serializers.Serializer):
+    """
+    Serializer for Cinema Homepage API to display films and their showtimes.
+    """
+    film = serializers.SerializerMethodField()
+    showtime_today = serializers.SerializerMethodField()
+
+    def get_film(self, obj):
+        """
+        Custom method to retrieve and serialize film information.
+        """
+        return FilmSerializer(obj[0]).data
+
+    def get_showtime_today(self, obj):
+        """
+        Custom method to retrieve and serialize showtimes for the film.
+        """
+        return ShowtimeForCinemaHomepageSerializer(obj[1], many=True).data
+
+
+class FilmForAdminShowtimeSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Film objects used in the admin panel for Showtime.
+    """
+
+    class Meta:
+        model = Film
+        fields = ('title', 'duration', 'poster')
+
+
+class AdminShowtimeSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Showtime objects used in the custom admin panel.
+    """
+    film = FilmForAdminShowtimeSerializer()
+    screen = CharField(source='screen.name')
+
+    class Meta:
+        model = Showtime
+        exclude = ('price',)
+
+
+class ScreenHallSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ScreenHall
+        fields = '__all__'
 
 
 class SpectatorSerializer(serializers.ModelSerializer):
@@ -38,70 +105,3 @@ class SpectatorSerializer(serializers.ModelSerializer):
         customer.set_password(password)
         customer.save()
         return customer
-
-
-class ShowtimeSerializers(serializers.ModelSerializer):
-    film = serializers.CharField(source="film.name", read_only=True)
-    screen = serializers.CharField(source="screen.name", read_only=True)
-
-    class Meta:
-        model = Showtime
-        fields = "__all__"
-
-
-class ShowtimeStaffSerializers(serializers.ModelSerializer):
-    date_start = serializers.DateField()
-    date_end = serializers.DateField()
-
-    class Meta:
-        model = Showtime
-        fields = ['date_start', 'date_end', 'time_start', 'film', 'screen', 'price']
-
-    def validate(self, data):
-        screen = data['screen']
-        film = data['film']
-        date_start = data.get('date_start',
-                              tz.localtime().date())  # obj: datatime.date
-        date_end = data['date_end']  # obj: datatime.date
-        time_start = data['time_start']  # obj: datatime.time
-
-        # check Start date
-        if date_start < tz.localtime(tz.now()).date():
-            raise serializers.ValidationError(
-                {'date_start': 'Unable to create a showtime in the past'}
-            )
-
-        # check End date
-        if date_start > date_end:
-            raise serializers.ValidationError(
-                {'date_end': "End date can't be less than Start date"}
-            )
-
-        # avoid creating sessions crossed by hall same date same time
-        showtime = Showtime.objects.filter(screen=screen)
-        if self.instance:
-            showtime = showtime.exclude(pk=self.instance.pk)
-
-        for sht in showtime:
-            cross_days = (sht.start_date <= date_start <= sht.end_date) \
-                         or (sht.start_date <= date_end <= sht.end_date)
-            cross_hours = (sht.start_time <= time_start <= sht.time_end) \
-                          or (sht.start_time <= time_end <= sht.time_end)
-            if cross_days and cross_hours:
-                raise serializers.ValidationError(
-                    f"Session crosses at least with session id#{sht.pk}"
-                )
-
-        return data
-
-
-class ScreenCinemaSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ScreenHall
-        fields = "__all__"
-
-
-class FilmSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Film
-        fields = '__all__'

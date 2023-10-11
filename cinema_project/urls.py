@@ -10,6 +10,8 @@ urlpatterns = [
     path('', include('cinema.urls')),
     path('cinema_admin/', include('cinema_admin.urls')),
     path('api/', include('api.urls')),
+
+    path("__debug__/", include("debug_toolbar.urls")),
 ]
 
 if settings.DEBUG:

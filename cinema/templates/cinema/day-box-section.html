@@ -5,7 +5,7 @@
     <div>
         <ul class="glider-track">
             {% for day in week %}
-            {% if day == day_selected %}
+            {% if day == selected_day %}
             <li class="glider-date selected">
                 {% else %}
             <li class="glider-date">
@@ -19,7 +19,7 @@
                         <span class="button">TOMORROW</span>
                         {% else %}
                         <span class="button">{{ day|date:"D"|upper }}</span>
-                        <br>{{ day|date:"j F" }}
+                        <br>{{ day|date:"j M" }}
                         {% endif %}
                     </button>
                 </form>

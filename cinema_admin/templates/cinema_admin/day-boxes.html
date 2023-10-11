@@ -6,7 +6,7 @@
         <ul class="glider-track">
             {% now "D j M" as today %}
             {% for day in week %}
-            {% if day == day_selected %}
+            {% if day == selected_day %}
             <li class="glider-date d-selected">
                 {% else %}
             <li class="glider-date">

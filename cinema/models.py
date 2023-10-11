@@ -16,6 +16,7 @@ from django.utils.translation import gettext as _
 
 class ScreenHall(models.Model):
     name = models.CharField(_('hall name'), max_length=20, unique=True)
+    slug = models.SlugField(_('slug'), max_length=20, unique=True)
     capacity = models.PositiveSmallIntegerField(_('capacity'))
 
     class Meta:
@@ -66,7 +67,7 @@ class Showtime(models.Model):
         db_table = 'showtimes'
         verbose_name = _('showtime')
         verbose_name_plural = _('showtimes')
-        ordering = ["start"]
+        ordering = ('start',)
 
     def __str__(self):
         return f"{tz.localtime(self.start).strftime('%d/%m %H:%M')} <{self.film}> [{self.screen.name}]"

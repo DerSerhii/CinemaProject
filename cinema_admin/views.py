@@ -1,64 +1,45 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.db.models import Count, Q, ProtectedError
 from django.db import transaction
+from django.db.models import Count, Q, ProtectedError
 from django.http import HttpResponseRedirect
-from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView, CreateView, DeleteView, UpdateView, FormView
+from django.urls import reverse_lazy, reverse
 from django.utils import timezone as tz
 
 from cinema.models import Showtime, ScreenHall, Film
 from cinema_admin.forms import ScreenForm, FilmDistributionCreationForm, ShowtimeEditForm
-from utils import select_show
+from utils import AdminShowtimeMixin, select_show
 
 
-class AdminHomePageView(LoginRequiredMixin, UserPassesTestMixin, ListView):
-    template_name = 'cinema_admin/admin-home.html'
+class AdminShowtimesView(LoginRequiredMixin, UserPassesTestMixin, AdminShowtimeMixin, ListView):
+    template_name = 'cinema_admin/admin-showtimes.html'
     context_object_name = 'showtime'
-    login_url = reverse_lazy("sign-in")
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.select_day = None
-        self.screen_id = None
+    login_url = reverse_lazy('sign-in')
 
     def test_func(self):
         return self.request.user.is_superuser
 
-    def get_queryset(self):
-        query_date_str = self.request.GET.get("day")
-        self.select_day = select_show.get_selected_day(query_date_str)
-        self.screen_id = 0
-
-        screen_filter = Q(screen=self.screen_id)
-        day_filter = Q(start__date=self.select_day)
-        sw_filter = screen_filter & day_filter if self.screen_id else day_filter
-
-        return Showtime.objects.filter(sw_filter).order_by('start'). \
-            exclude(start__lte=tz.localtime(tz.now()))
-
     def get_context_data(self, **kwargs):
+        """
+        Adds additional context data to the view's template.
+        """
         context = super().get_context_data(**kwargs)
-
-        # filter settings
-        filter_date = Q(showtime__start__date=self.select_day)
-        filter_time_start = Q(showtime__start__gte=tz.localtime(tz.now()))
-        filter_date_all = Q(start__date=self.select_day)
-        filter_time_start_all = Q(start__gte=tz.localtime(tz.now()))
-
-        if self.select_day.date() == tz.localtime(tz.now()).date():
-            showtime = Count('showtime', filter=filter_date & filter_time_start)
-            showtime_all = filter_date_all & filter_time_start_all
-        else:
-            showtime = Count('showtime', filter=filter_date)
-            showtime_all = filter_date_all
-
-        context['day_selected'] = self.select_day.date()
-        context['screen_selected'] = self.screen_id
-        context['screens'] = ScreenHall.objects.annotate(count=showtime)
-        context['screens_all'] = Showtime.objects.filter(showtime_all).count()
-
+        screen_halls = self.get_screen_halls()
+        context['selected_day'] = self.selected_day
+        context['selected_screen'] = self.kwargs.get('screen_slug')
+        context['screens'] = screen_halls
+        context['amount_all_showtimes'] = sum([i.amount_showtimes for i in screen_halls])
         return context
+
+    def get_screen_halls(self):
+        """
+        Retrieves and returns information about all screening halls (ScreenHall)
+        along with a count of associated Showtime instances for each hall.
+        """
+        return ScreenHall.objects.annotate(
+            amount_showtimes=Count('showtime', filter=self.showtime_filter_related)
+        ).defer('capacity')
 
 
 class FilmView(LoginRequiredMixin, UserPassesTestMixin, ListView):
@@ -217,7 +198,7 @@ class RemoveScreenView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
 
 class ScreenShowtimeView(LoginRequiredMixin, UserPassesTestMixin, ListView):
-    template_name = 'cinema_admin/admin-home.html'
+    template_name = 'cinema_admin/admin-showtimes.html'
     context_object_name = 'showtime'
     login_url = reverse_lazy("sign-in")
 
@@ -238,7 +219,7 @@ class ScreenShowtimeView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         day_filter = Q(start__date=self.select_day)
         sw_filter = screen_filter & day_filter if self.screen_id else day_filter
 
-        return Showtime.objects.filter(sw_filter).order_by('start').\
+        return Showtime.objects.filter(sw_filter).order_by('start'). \
             exclude(start__lte=tz.localtime(tz.now()))
 
     def get_context_data(self, **kwargs):
@@ -295,7 +276,7 @@ class FilmDistributionCreationFormView(LoginRequiredMixin, UserPassesTestMixin, 
 
     def test_func(self):
         # return self.request.user.is_superuser
-        return self.request.superuser.is_staff
+        return self.request.user.is_staff
 
     def form_valid(self, form):
         with transaction.atomic():

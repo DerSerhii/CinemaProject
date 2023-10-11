@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.forms import AuthenticationForm
@@ -7,71 +5,33 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.messages.views import SuccessMessageMixin
 from django.db import transaction
-from django.db.models import Q, Sum, F
+from django.db.models import Sum, F
 from django.shortcuts import redirect
 from django.urls import reverse_lazy, reverse
-from django.views.generic import TemplateView, CreateView, UpdateView, DetailView, ListView
-from django.utils import timezone as tz
+from django.views.generic import CreateView, UpdateView, DetailView, ListView
+
 
 from cinema.forms import SignUpForm, BuyTicketForm
-from cinema.models import Showtime, Film, Ticket
+from cinema.models import Showtime, Ticket
 from cinema_admin.models import SpectatorProfile
+from utils import CinemaShowtimeMixin
 
 
-class CinemaHomePageView(TemplateView):
+class CinemaHomePageView(CinemaShowtimeMixin, ListView):
     """
-    This object represents the first view that a visitor sees when visiting the site.
+    View for the cinema homepage, displaying a list of films along with their showtimes.
     """
-    template_name = "cinema/cinema-home.html"
+    template_name = 'cinema/cinema-home.html'
+    context_object_name = 'films'
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> dict:
+        """
+        Adds additional context data to the view's template:
+        - `selected_day`.
+        """
         context = super().get_context_data(**kwargs)
-        # get the utils day from template
-        select_day = self.get_selected_day()
-        # add new context
-        context["day_selected"] = select_day
-        context["showtime"] = self.get_films_with_showtimes_on_this_day(select_day)
-
+        context['selected_day'] = self.selected_day
         return context
-
-    def get_selected_day(self):
-        """
-        Returns the day selected by the user from the template.
-        If the choice has not yet been made, it returns the current date by default.
-        """
-        if day := self.request.GET.get('day'):
-            return tz.datetime.strptime(day, "%m/%d/%Y").date()
-        return tz.localdate()
-
-    @staticmethod
-    def get_films_with_showtimes_on_this_day(select_day):
-        """
-        Returns a list of Films with QuerySets of Showtimes on this day
-        """
-
-        # get films on this day
-        query_film_on_this_day = \
-            Showtime.objects.values("film").filter(start=select_day).distinct()
-
-        list_film_id_on_this_day = [i.get("film") for i in query_film_on_this_day]
-
-        # get films with showtimes on this day
-        films_with_showtime_on_this_day = []
-
-        q_select_day = Q(start=select_day)
-        q_time_start_gte_now = Q(time_start__gte=tz.localtime(tz.now()).time())
-
-        if select_day == tz.localtime(tz.now()).date():
-            q_filter = q_select_day & q_time_start_gte_now
-        else:
-            q_filter = q_select_day
-    
-        for film_id in list_film_id_on_this_day:
-            film = Film.objects.get(id=film_id). \
-                showtime_set.filter(q_filter).order_by("time_start")
-            films_with_showtime_on_this_day.append(film)
-
-        return films_with_showtime_on_this_day
 
 
 class ShowtimeView(DetailView):
@@ -108,7 +68,7 @@ class SignInView(SuccessMessageMixin, LoginView):
 
     def get_success_url(self):
         if self.request.user.is_staff:
-            return reverse('admin-home')
+            return reverse('admin-showtimes', kwargs={'screen_slug': 'all'})
         return reverse("cinema-home")
 
 

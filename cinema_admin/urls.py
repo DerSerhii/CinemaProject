@@ -4,10 +4,10 @@ from django.urls import path
 
 from .views import FilmView, ScreenShowtimeView, CreateScreenView, \
     RemoveScreenView, EditScreenView, FilmDistributionCreationFormView, RemoveShowtimeView, \
-    EditShowtimeView, CreateFilmView, EditFilmView, RemoveFilmView, ScreenShowtimeAllView, AdminHomePageView
+    EditShowtimeView, CreateFilmView, EditFilmView, RemoveFilmView, ScreenShowtimeAllView, AdminShowtimesView
 
 urlpatterns = [
-    path('', AdminHomePageView.as_view(), name='admin-home'),
+    path('showtimes/<slug:screen_slug>', AdminShowtimesView.as_view(), name='admin-showtimes'),
 
     path('films/', FilmView.as_view(), name='film'),
     path('add-film/', CreateFilmView.as_view(), name='add-film'),

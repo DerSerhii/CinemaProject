@@ -95,7 +95,7 @@ def find_showtime_intersections(
     start_end_lst = list(chain.from_iterable(new_showtime_ranges_with_technical_break))
 
     queryset = Showtime.objects.filter(screen=screen).values_list(
-        'start', 'end', 'film__name'
+        'start', 'end', 'film__title'
     )
     existing_showtime_ranges = list(map(lambda ft_range: FilmTimeRange._make(ft_range), queryset))
 
