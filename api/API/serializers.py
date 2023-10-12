@@ -1,6 +1,7 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
-from rest_framework.fields import CharField
+from rest_framework.fields import CharField, IntegerField, DateField
+from rest_framework.utils.serializer_helpers import ReturnDict
 
 from cinema.models import Showtime, ScreenHall, Film
 from cinema_admin.models import CinemaUser
@@ -34,13 +35,13 @@ class CinemaShowtimeSerializer(serializers.Serializer):
     film = serializers.SerializerMethodField()
     showtime_today = serializers.SerializerMethodField()
 
-    def get_film(self, obj):
+    def get_film(self, obj) -> ReturnDict:
         """
         Custom method to retrieve and serialize film information.
         """
         return FilmSerializer(obj[0]).data
 
-    def get_showtime_today(self, obj):
+    def get_showtime_today(self, obj) -> ReturnDict:
         """
         Custom method to retrieve and serialize showtimes for the film.
         """
@@ -57,6 +58,12 @@ class FilmForAdminShowtimeSerializer(serializers.ModelSerializer):
         fields = ('title', 'duration', 'poster')
 
 
+class ScreenHallSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ScreenHall
+        fields = '__all__'
+
+
 class AdminShowtimeSerializer(serializers.ModelSerializer):
     """
     Serializer for Showtime objects used in the custom admin panel.
@@ -69,10 +76,25 @@ class AdminShowtimeSerializer(serializers.ModelSerializer):
         exclude = ('price',)
 
 
-class ScreenHallSerializer(serializers.ModelSerializer):
+class ScreenHallForAdminShowtimeContextSerializer(serializers.ModelSerializer):
+    """
+    Serializer for ScreenHall objects used in the context of the admin showtimes view.
+    """
+    amount_showtimes = IntegerField()
+
     class Meta:
         model = ScreenHall
-        fields = '__all__'
+        fields = ('name', 'amount_showtimes')
+
+
+class AdminShowtimeContextSerializer(serializers.Serializer):
+    """
+    Serializer for representing additional context data used in the admin showtimes view.
+    """
+    selected_day = DateField()
+    selected_screen = CharField()
+    screens = ScreenHallForAdminShowtimeContextSerializer(many=True)
+    amount_all_showtimes = IntegerField()
 
 
 class SpectatorSerializer(serializers.ModelSerializer):

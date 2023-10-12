@@ -1,7 +1,7 @@
 import datetime as dt
 from itertools import groupby
 
-from django.db.models import Count, Q
+from django.db.models import Count, Q, QuerySet
 from django.utils import timezone as tz
 
 from cinema.models import Film, Showtime, ScreenHall
@@ -67,7 +67,7 @@ class ShowtimeMixin:
 
         return showtime_filter_direct, showtime_filter_related
 
-    def get_showtime_queryset(self):
+    def get_showtime_queryset(self) -> QuerySet[Showtime]:
         """
         Retrieves a queryset of Showtime objects.
         This method returns a queryset of Showtime objects, optimized for database queries.
@@ -134,7 +134,7 @@ class AdminShowtimeMixin(ShowtimeMixin):
     and for retrieving a filtered queryset of Showtime objects.
     """
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Showtime]:
         """
         Retrieves a filtered queryset of Showtime objects based on the selected screen slug.
 
@@ -153,7 +153,7 @@ class AdminShowtimeMixin(ShowtimeMixin):
             return queryset.filter(screen__slug=screen_slug)
         return queryset
 
-    def get_screen_halls(self):
+    def get_screen_halls_queryset(self) -> QuerySet[ScreenHall]:
         """
         Retrieves and returns information about all screening halls (ScreenHall)
         along with a count of associated Showtime instances for each hall.
@@ -164,3 +164,16 @@ class AdminShowtimeMixin(ShowtimeMixin):
             )
             .defer('capacity')
         )
+
+    def get_context(self) -> dict:
+        """
+        Retrieves and returns a dictionary with additional context data.
+        """
+        screen_halls = self.get_screen_halls_queryset()
+        amount_all_showtimes = sum([screen.amount_showtimes for screen in screen_halls])
+        return {
+            'selected_day': self.selected_day,
+            'selected_screen': self.kwargs.get('screen_slug'),
+            'screens': screen_halls,
+            'amount_all_showtimes': amount_all_showtimes
+        }

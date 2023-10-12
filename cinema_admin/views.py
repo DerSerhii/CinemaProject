@@ -25,7 +25,7 @@ class AdminShowtimesView(LoginRequiredMixin, UserPassesTestMixin, AdminShowtimeM
         Adds additional context data to the view's template.
         """
         context = super().get_context_data(**kwargs)
-        screen_halls = self.get_screen_halls()
+        screen_halls = self.get_screen_halls_queryset()
         context['selected_day'] = self.selected_day
         context['selected_screen'] = self.kwargs.get('screen_slug')
         context['screens'] = screen_halls
