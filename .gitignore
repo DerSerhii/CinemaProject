@@ -1,4 +1,10 @@
 /.idea/*
+
+.env
+/.env
+cinema_project/.env
+
 /__pycache__/*
-/diploma/__pycache__/*
+/cinema_project/__pycache__/*
+
 /media/*
