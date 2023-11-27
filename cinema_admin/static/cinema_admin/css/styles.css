@@ -422,6 +422,7 @@ ul.lang-list li a:hover {color: #fdc073;}
     width: 350px;
     font-size: 18px;
     font-family: Tahoma;
+    margin-bottom: 8px;
 }
 .form-label {
     background-color: none;
@@ -455,10 +456,12 @@ ul.lang-list li a:hover {color: #fdc073;}
 }
 .form-error ul {
     list-style: none;
-    padding: 0;
+    font-family: Tahoma;
+    font-size: 17px;
+    margin: 0;
+    padding: 0px;
     color: #CC0000;
 }
-
 .form-button {
     background-color: rgba(142, 166, 243, 0.85);
     color: #061329;

@@ -9,10 +9,10 @@ from django.utils import timezone as tz
 
 from cinema.models import Showtime, ScreenHall, Film
 from cinema_admin.forms import ScreenForm, FilmDistributionCreationForm, ShowtimeEditForm
-from utils import AdminShowtimeMixin, select_show
+from utils import AdminShowtimeMixin
 
 
-class AdminShowtimesView(LoginRequiredMixin, UserPassesTestMixin, AdminShowtimeMixin, ListView):
+class AdminShowtimesView(AdminShowtimeMixin, ListView):
     template_name = 'cinema_admin/admin-showtimes.html'
     context_object_name = 'showtime'
     login_url = reverse_lazy('sign-in')
@@ -25,11 +25,31 @@ class AdminShowtimesView(LoginRequiredMixin, UserPassesTestMixin, AdminShowtimeM
         Adds additional context data to the view's template.
         """
         context = super().get_context_data(**kwargs)
-        screen_halls = self.get_screen_halls_queryset()
-        context['selected_day'] = self.selected_day
-        context['selected_screen'] = self.kwargs.get('screen_slug')
-        context['screens'] = screen_halls
-        context['amount_all_showtimes'] = sum([i.amount_showtimes for i in screen_halls])
+        additional_context = self.get_additional_context()
+        context.update(additional_context)
+        return context
+
+
+class FilmDistributionCreationFormView(LoginRequiredMixin, UserPassesTestMixin, FormView):
+    """
+    A view class handles the creation of film distributions by authorized `cinema_admin`.
+    """
+    form_class = FilmDistributionCreationForm
+    template_name = 'cinema_admin/create-film-distribution.html'
+    success_url = reverse_lazy('admin-showtimes', kwargs={'screen_slug': 'all'})
+    login_url = reverse_lazy('sign-in')
+
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            form.create_film_distribution()
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['title'] = 'Create showtime'
         return context
 
 
@@ -237,47 +257,7 @@ class ScreenShowtimeView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         return context
 
 
-class FilmDistributionCreationFormView(LoginRequiredMixin, UserPassesTestMixin, FormView):
-    """
-    A view class that handles the creation of film distributions by authorized cinema_admin.
 
-    This view requires users to be logged in, have superuser privileges, and fill out a form to create a new film distribution.
-    Upon successful submission of the form, the film distribution is created and associated data is stored in the database.
-
-    Attributes:
-        form_class (class): The form class used for capturing input data for film distribution creation.
-        template_name (str): The name of the HTML template used to render the form.
-        success_url (str): The URL to redirect to after successful form submission.
-        login_url (str): The URL to redirect unauthenticated users to the sign-in page.
-
-    Methods:
-        test_func(): Checks if the user is a superuser.
-        form_valid(form): Processes the valid form data and creates a film distribution within a database transaction.
-        get_context_data(**kwargs): Retrieves additional context data to pass to the template.
-
-    Example usage:
-    To create a new film distribution, a user with superuser privileges should access this view, fill out the required information,
-    and submit the form. Upon successful submission, the new film distribution will be stored in the database.
-
-    """
-    form_class = FilmDistributionCreationForm
-    template_name = "cinema_admin/create-showtime.html"
-    success_url = reverse_lazy("screen-showtime", kwargs={"scr_id": 0})
-    login_url = reverse_lazy("sign-in")
-
-    def test_func(self):
-        # return self.request.user.is_superuser
-        return self.request.user.is_staff
-
-    def form_valid(self, form):
-        with transaction.atomic():
-            form.create_film_distribution()
-        return super().form_valid(form)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["title"] = "Create showtime"
-        return context
 
 
 class EditShowtimeView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):

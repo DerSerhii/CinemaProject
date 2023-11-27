@@ -5,7 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.messages.views import SuccessMessageMixin
 from django.db import transaction
-from django.db.models import Sum, F
+from django.db.models import F, Sum
 from django.shortcuts import redirect
 from django.urls import reverse_lazy, reverse
 from django.views.generic import CreateView, UpdateView, DetailView, ListView
@@ -30,7 +30,8 @@ class CinemaHomePageView(CinemaShowtimeMixin, ListView):
         - `selected_day`.
         """
         context = super().get_context_data(**kwargs)
-        context['selected_day'] = self.selected_day
+        additional_context = self.get_additional_context()
+        context.update(additional_context)
         return context
 
 

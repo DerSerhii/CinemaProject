@@ -1,11 +1,22 @@
+import datetime as dt
+
+from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
-from rest_framework.fields import CharField, IntegerField, DateField
+from rest_framework.serializers import ValidationError
 from rest_framework.utils.serializer_helpers import ReturnDict
+from rest_framework.validators import UniqueForYearValidator
 
+import utils
 from cinema.models import Showtime, ScreenHall, Film
 from cinema_admin.models import CinemaUser
-
+from django.middleware.security import SecurityMiddleware
+from django.contrib.sessions.middleware import SessionMiddleware
+from django.middleware.common import CommonMiddleware
+from django.middleware.csrf import CsrfViewMiddleware
+from django.contrib.auth.middleware import AuthenticationMiddleware
+from django.contrib.messages.middleware import MessageMiddleware
+from django.middleware.clickjacking import XFrameOptionsMiddleware
 
 class FilmSerializer(serializers.ModelSerializer):
     """
@@ -21,7 +32,7 @@ class ShowtimeForCinemaHomepageSerializer(serializers.ModelSerializer):
     """
     Serializer for displaying showtime details on the Cinema Homepage API.
     """
-    screen = CharField(source='screen.name')
+    screen = serializers.CharField(source='screen.name')
 
     class Meta:
         model = Showtime
@@ -69,7 +80,7 @@ class AdminShowtimeSerializer(serializers.ModelSerializer):
     Serializer for Showtime objects used in the custom admin panel.
     """
     film = FilmForAdminShowtimeSerializer()
-    screen = CharField(source='screen.name')
+    screen = serializers.CharField(source='screen.name')
 
     class Meta:
         model = Showtime
@@ -80,7 +91,7 @@ class ScreenHallForAdminShowtimeContextSerializer(serializers.ModelSerializer):
     """
     Serializer for ScreenHall objects used in the context of the admin showtimes view.
     """
-    amount_showtimes = IntegerField()
+    amount_showtimes = serializers.IntegerField()
 
     class Meta:
         model = ScreenHall
@@ -91,10 +102,53 @@ class AdminShowtimeContextSerializer(serializers.Serializer):
     """
     Serializer for representing additional context data used in the admin showtimes view.
     """
-    selected_day = DateField()
-    selected_screen = CharField()
+    selected_day = serializers.DateField()
+    selected_screen = serializers.CharField()
     screens = ScreenHallForAdminShowtimeContextSerializer(many=True)
-    amount_all_showtimes = IntegerField()
+    amount_all_showtimes = serializers.IntegerField()
+
+
+class FilmDistributionCreationSerializer(serializers.Serializer):
+    film = serializers.PrimaryKeyRelatedField(queryset=Film.objects.filter(is_active=True))
+    release_day = serializers.DateField()
+    last_day = serializers.DateField()
+    start_hour = serializers.IntegerField()
+    start_minute = serializers.IntegerField()
+    screen = serializers.PrimaryKeyRelatedField(queryset=ScreenHall.objects.all())
+    price = serializers.DecimalField(max_digits=5, decimal_places=2, max_value=1000, min_value=0)
+
+    def validate(self, data) -> dict | None:
+        """
+        # Hook for doing extra form-wide cleaning.
+        #
+        # If the last day of distribution film is earlier than the release day,
+        # then an error will be added to the field `last_day`.
+        #
+        # If the start of showtime is less than the current moment,
+        # then ah error will be added to the filed `start_minute`.
+        #
+        # If film distribution that is being created has intersections
+        # with existing showtimes, an error will be raised.
+        """
+        validator = utils.FilmDistributionCreationValidator(data)
+        return validator.data
+
+    def create(self, validated_data):
+        film: Film = validated_data['film']
+        release_day: dt.date = validated_data['release_day']
+        last_day: dt.date = validated_data['last_day']
+        start_datetime: dt.datetime = validated_data['start_datetime']
+        screen: ScreenHall = validated_data['screen']
+        price = validated_data['price']
+
+        bulk_showtime = []
+        for day in range((last_day - release_day).days + 1):
+            start = start_datetime + dt.timedelta(days=day)
+            end = start + film.duration
+            bulk_showtime.append(
+                Showtime(film=film, start=start, end=end, screen=screen, price=price)
+            )
+        return Showtime.objects.bulk_create(bulk_showtime)
 
 
 class SpectatorSerializer(serializers.ModelSerializer):

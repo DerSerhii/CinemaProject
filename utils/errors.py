@@ -12,17 +12,17 @@ from cinema.models import ScreenHall, Film
 from .helpers import find_showtime_intersections
 
 
-def has_error_showtime_start(start: dt.datetime | dt.date) -> str | None:
+def has_showtime_creation_error_in_past(start: dt.datetime | dt.date) -> str | None:
     """
     Returns an error message if the start of showtime less than the current moment.
     If there is no error, returns `None`.
     """
     if type(start) == dt.date:
         now = tz.localdate()
-        now_msg = f"Today is {now.strftime('%-d %b, %Y')}"
+        now_msg = f"Today's already {now.strftime('%-d %b, %Y')}"
     elif type(start) == dt.datetime:
         now = tz.localtime()
-        now_msg = f"Now: {now.strftime('%-d %b %H:%M')}"
+        now_msg = f"Now's {now.strftime('%H:%M')}"
     else:
         raise ValueError(f"Passed {type(start)} but must be 'datetime.date' "
                          "or 'datetime.datetime' object")

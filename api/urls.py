@@ -9,6 +9,7 @@ from rest_framework.authtoken import views
 from .API.resources import (
     CinemaHomepageAPIView,
     AdminShowtimesAPIView,
+    FilmDistributionCreateAPIView,
     ScreenCinemaViewSet,
     FilmViewSet
 )
@@ -26,7 +27,8 @@ urlpatterns = [
     path('cinema/', CinemaHomepageAPIView.as_view()),
 
     # URL for custom admin panel
-    path('cinema_admin/showtimes/<slug:screen_slug>', AdminShowtimesAPIView.as_view()),
+    path('cinema_admin/showtimes/<slug:screen_slug>/', AdminShowtimesAPIView.as_view()),
+    path('add-film-distribution/', FilmDistributionCreateAPIView.as_view()),
 
     path('', include(router.urls))
 ]

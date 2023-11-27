@@ -89,6 +89,12 @@ class ShowtimeMixin:
             .filter(self.showtime_filter_direct)
         )
 
+    def get_additional_context(self) -> dict:
+        """
+        Retrieves and returns a dictionary with additional context data.
+        """
+        return dict(selected_day=self.selected_day)
+
 
 class CinemaShowtimeMixin(ShowtimeMixin):
     """
@@ -165,15 +171,18 @@ class AdminShowtimeMixin(ShowtimeMixin):
             .defer('capacity')
         )
 
-    def get_context(self) -> dict:
+    def get_additional_context(self) -> dict:
         """
         Retrieves and returns a dictionary with additional context data.
         """
         screen_halls = self.get_screen_halls_queryset()
-        amount_all_showtimes = sum([screen.amount_showtimes for screen in screen_halls])
-        return {
-            'selected_day': self.selected_day,
-            'selected_screen': self.kwargs.get('screen_slug'),
-            'screens': screen_halls,
-            'amount_all_showtimes': amount_all_showtimes
-        }
+        amount_all_showtimes = sum([hall.amount_showtimes for hall in screen_halls])
+        additional_context = super().get_additional_context()
+        additional_context.update(
+            {
+                'selected_screen': self.kwargs.get('screen_slug'),
+                'screens': screen_halls,
+                'amount_all_showtimes': amount_all_showtimes
+            }
+        )
+        return additional_context
