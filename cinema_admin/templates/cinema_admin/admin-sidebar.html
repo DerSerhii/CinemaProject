@@ -1,0 +1,30 @@
+<ul class="sidebar">
+    <li class="create-screen">
+        <a href="{% url 'add-film-distribution' %}"> + create film distribution</a>
+    </li>
+    <li class="create-screen">
+        <a href="{% url 'add-film' %}"> + create film</a>
+    </li>
+    <li class="create-screen">
+        <a href="{% url 'add-screen' %}"> + create screen hall</a>
+    </li>
+    <hr>
+
+    {% if selected_screen == 'all' %}
+    <li class="selected">✔️ ALL SCREENS ({{amount_all_showtimes}})</li>
+    {% else %}
+    <li>
+        <a href="{% url 'admin-showtimes' 'all' %}">🔘 ALL SCREENS ({{amount_all_showtimes}})</a>
+    </li>
+    {% endif %}
+
+    {% for screen in screens %}
+    {% if selected_screen == screen.slug %}
+    <li class="selected">✔️ {{screen.name|title}} ({{screen.amount_showtimes}})</li>
+    {% else %}
+    <li>
+        <a href="{% url 'admin-showtimes' screen.slug %}">🔘 {{screen.name|title}} ({{screen.amount_showtimes}})</a>
+    </li>
+    {% endif %}
+    {% endfor %}
+</ul>

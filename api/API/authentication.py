@@ -2,7 +2,7 @@ from django.utils import timezone
 from rest_framework import exceptions
 from rest_framework.authentication import TokenAuthentication
 
-from diploma.settings import PERIOD_OF_INACTIVITY_BEFORE_LOGOUT
+from cinema_project.settings import PERIOD_OF_INACTIVITY_BEFORE_LOGOUT
 
 
 class TokenWithLifeTimeAuthentication(TokenAuthentication):

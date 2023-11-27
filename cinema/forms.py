@@ -1,12 +1,13 @@
 from django.contrib.auth.forms import UserCreationForm
 from django import forms
 
-from .models import Spectator, Ticket
+from .models import Ticket
+from cinema_admin.models import CinemaUser
 
 
 class SignUpForm(UserCreationForm):
     class Meta:
-        model = Spectator
+        model = CinemaUser
         fields = ("username", "first_name", "last_name", "email",
                   "password1", "password2")
         widgets = {
@@ -26,7 +27,7 @@ class BuyTicketForm(forms.ModelForm):
             self.showtime = showtime
             self.fields['quantity'].widget.attrs["min"] = 1
             self.fields['quantity'].widget.attrs["max"] = \
-                self.showtime.screen.capacity - self.showtime.attendance
+                self.showtime.screen_blue.capacity - self.showtime.attendance
 
     class Meta:
         model = Ticket

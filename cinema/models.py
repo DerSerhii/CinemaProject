@@ -1,97 +1,93 @@
-from django.contrib.auth.models import AbstractUser
+"""
+The module represents models for application `cinema`.
+
+This module contains model definitions for the cinema system, including
+, cinema halls, films, showtimes and tickets.
+"""
+
+import datetime as dt
+
+from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
-from django.urls import reverse
+from django.utils import timezone as tz
 from django.utils.translation import gettext as _
 
-from diploma import settings
 
+class ScreenHall(models.Model):
+    name = models.CharField(_('hall name'), max_length=20, unique=True)
+    slug = models.SlugField(_('slug'), max_length=20, unique=True)
+    capacity = models.PositiveSmallIntegerField(_('capacity'))
 
-class Spectator(AbstractUser):
-    wallet = models.DecimalField(default=0,
-                                 max_digits=6, decimal_places=2,
-                                 verbose_name=_("Top up your account"),
-                                 validators=[MinValueValidator(0)])
-    
     class Meta:
-        verbose_name = _("Spectator")
-        verbose_name_plural = _("Spectator")
-        ordering = ["username"]
-    
-    def __str__(self):
-        return self.username
-    
-    def get_absolute_url(self):
-        return reverse("profile", kwargs={"spec_id": self.pk})
+        db_table = 'screen_halls'
+        verbose_name = _('screen hall')
+        verbose_name_plural = _('screen halls')
+        ordering = ['name']
 
-
-class ScreenCinema(models.Model):
-    name = models.CharField(max_length=20, unique=True, verbose_name=_("Name screen"))
-    capacity = models.PositiveSmallIntegerField(verbose_name=_("Capacity"))
-    
-    class Meta:
-        verbose_name = _("Screen")
-        verbose_name_plural = _("Screens")
-        ordering = ["name"]
-    
     def __str__(self):
         return self.name
 
 
 class Film(models.Model):
-    name = models.CharField(max_length=130, verbose_name=_("Film"))
-    description = models.TextField(blank=True, verbose_name=_("Description"))
-    starring = models.CharField(max_length=200, verbose_name=_("Starring"))
-    director = models.CharField(max_length=50, verbose_name=_("Director"))
-    duration = models.DurationField(verbose_name=_("Duration"))
-    poster = models.ImageField(null=True, blank=True, upload_to="poster/%Y/%m/%d/",
-                               verbose_name=_("Poster"))
+    title = models.CharField(_('film title'), max_length=150)
+    duration: dt.timedelta = models.DurationField(_('duration'))
+    is_active = models.BooleanField(_('active'), default=True)
+    release_year = models.PositiveSmallIntegerField(_('release day'))
+    description = models.TextField(_('description'), blank=True)
+    starring = models.CharField(_('starring'), max_length=255)
+    director = models.CharField(_('director'), max_length=50)
+    poster = models.ImageField(_('poster'), upload_to='poster/%Y/%m/%d/', null=True)
 
     class Meta:
-        unique_together = (('name', 'director'),)
-        verbose_name = _("Film")
-        verbose_name_plural = _("Films")
-        ordering = ("name",)
-    
+        db_table = 'films'
+        unique_together = [('title', 'director')]
+        verbose_name = _('film')
+        verbose_name_plural = _('films')
+        ordering = ['release_year', 'title']
+
     def __str__(self):
-        return self.name
+        return self.title
 
 
 class Showtime(models.Model):
-    date = models.DateField(verbose_name=_("Showtime date"))
-    time_start = models.TimeField(verbose_name=_("Showtime start time"))
-    time_end = models.TimeField(verbose_name=_("Showtime end time"))
-    screen = models.ForeignKey(ScreenCinema, on_delete=models.PROTECT, verbose_name=_("Screen"))
-    film = models.ForeignKey(Film, on_delete=models.PROTECT, verbose_name=_("Film"))
-    price = models.DecimalField(default=1, max_digits=5, decimal_places=2,
-                                verbose_name=_("Ticket price"),
-                                validators=[MinValueValidator(0)])
-    attendance = models.PositiveSmallIntegerField(default=0, verbose_name=_("Attendance"))
+    film = models.ForeignKey(Film, on_delete=models.PROTECT)
+    start = models.DateTimeField(_('the film start'))
+    end = models.DateTimeField(_('the film end'))
+    screen = models.ForeignKey(ScreenHall, on_delete=models.PROTECT)
+    price = models.DecimalField(
+        _('ticket price'),
+        max_digits=5, decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(0)]
+    )
+    attendance = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
-        verbose_name = _("Showtime")
-        verbose_name_plural = _("Showtimes")
-        ordering = ("date",)
+        db_table = 'showtimes'
+        verbose_name = _('showtime')
+        verbose_name_plural = _('showtimes')
+        ordering = ('start',)
 
     def __str__(self):
-        return f"{self.date}-{self.time_start} <{self.film}>"
+        return f"{tz.localtime(self.start).strftime('%d/%m %H:%M')} <{self.film}> [{self.screen.name}]"
 
 
 class Ticket(models.Model):
-    spectator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT,
-                                  verbose_name=_("Spectator"))
-    showtime = models.ForeignKey(Showtime, on_delete=models.PROTECT,
-                                 verbose_name=_("Showtime"),
-                                 related_name="tickets")
-    quantity = models.PositiveSmallIntegerField(verbose_name=_("Showtime"),
-                                                validators=[MinValueValidator(1),
-                                                            MaxValueValidator(1000)])
-    time_purchase = models.DateTimeField(auto_now_add=True)
+    spectator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
+    showtime = models.ForeignKey(Showtime, on_delete=models.PROTECT, related_name="tickets")
+    quantity = models.PositiveSmallIntegerField(
+        _('quantity'),
+        validators=[MinValueValidator(1),
+                    MaxValueValidator(100)]
+    )
+    purchase_time = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name = _("Ticket")
-        verbose_name_plural = _("Tickets")
-        ordering = ["-time_purchase"]
+        db_table = 'tickets'
+        verbose_name = _('ticket')
+        verbose_name_plural = _('tickets')
+        ordering = ['-purchase_time']
 
     def __str__(self):
         return f"Ticket #{self.pk}"
