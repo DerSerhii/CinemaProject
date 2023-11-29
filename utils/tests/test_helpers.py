@@ -7,8 +7,8 @@ import datetime as dt
 from django.test import TestCase
 from django.utils import timezone as tz
 
-import utils
-from cinema.models import ScreenCinema, Film, Showtime
+from utils import helpers
+from cinema.models import ScreenHall, Film, Showtime
 
 
 class DeriveRangeYearsTestCase(TestCase):
@@ -21,13 +21,13 @@ class DeriveRangeYearsTestCase(TestCase):
 
     def test_default_number_of_years(self):
         expected_years = [self.current_year, self.current_year + 1]
-        result = utils.derive_range_years()
+        result = helpers.derive_range_years()
         self.assertEqual(result, expected_years)
 
     def test_custom_number_of_years(self):
         custom_number = 5
         expected_years = [self.current_year + i for i in range(custom_number)]
-        result = utils.derive_range_years(custom_number)
+        result = helpers.derive_range_years(custom_number)
         self.assertEqual(result, expected_years)
 
 
@@ -44,7 +44,7 @@ class ConstructStartDatetimeTestCase(TestCase):
             dt.datetime(test_date.year, test_date.month, test_date.day, test_hour, test_minute),
             tz.get_current_timezone()
         )
-        result = utils.construct_start_datetime(test_date, test_hour, test_minute)
+        result = helpers.construct_start_datetime(test_date, test_hour, test_minute)
         self.assertEqual(result, expected_datetime)
 
 
@@ -52,6 +52,7 @@ class GetTimeRangeNewShowtimesTestCase(TestCase):
     """
     Test case for the `get_time_range_new_showtimes` function.
     """
+
     def setUp(self):
         self.film_1_30 = Film.objects.create(
             name='Test Film 1:30 hour',
@@ -68,7 +69,7 @@ class GetTimeRangeNewShowtimesTestCase(TestCase):
         """
         start_datetime = dt.datetime.fromisoformat('2023-01-01 01:00:00+02:00')
         last_day = dt.date.fromisoformat('2023-01-01')
-        result = utils.get_timerange_new_showtimes(
+        result = helpers.get_timerange_new_showtimes(
             self.film_1_30.duration,
             start_datetime,
             last_day
@@ -81,7 +82,7 @@ class GetTimeRangeNewShowtimesTestCase(TestCase):
         ]
         self.assertEqual(1, len(result))
         self.assertEqual(list, type(result))
-        self.assertEqual(utils.TimeRange, type(result[0]))
+        self.assertEqual(helpers.TimeRange, type(result[0]))
         self.assertEqual(dt.datetime, type(result[0].start))
         self.assertEqual(dt.datetime, type(result[0].end))
         self.assertEqual(expected_data, result)
@@ -94,7 +95,7 @@ class GetTimeRangeNewShowtimesTestCase(TestCase):
         start_datetime_release = dt.datetime.fromisoformat('2023-01-01 01:00:00+02:00')
         start_datetime_day_3 = dt.datetime.fromisoformat('2023-01-03 01:00:00+02:00')
         last_day = dt.date.fromisoformat('2023-01-04')
-        result = utils.get_timerange_new_showtimes(
+        result = helpers.get_timerange_new_showtimes(
             self.film_1_30.duration,
             start_datetime_release,
             last_day
@@ -121,6 +122,183 @@ class GetTimeRangeNewShowtimesTestCase(TestCase):
         self.assertEqual(expected_data, result)
 
 
+class TestParseCleanedData(TestCase):
+    """
+    Test case for the `parse_cleaned_data` function.
+    """
+
+    def setUp(self):
+        self.screen_blue = ScreenHall.objects.create(name='blue', capacity=50)
+        film_duration = dt.timedelta(hours=1.5)
+        self.film_1_30 = Film.objects.create(
+            title='Test Film 1:30 hour',
+            duration=film_duration,
+            release_year=2023,
+            description='Test Description',
+            starring='Test Starring',
+            director='Test Director',
+        )
+        self.start_datetime = dt.datetime.fromisoformat('2023-01-01 01:00:00+02:00')
+        self.showtime = Showtime.objects.create(
+            film=self.film_1_30,
+            start=self.start_datetime,
+            end=self.start_datetime + film_duration,
+            screen=self.screen_blue
+        )
+
+    def test_valid_data_with_showtime(self):
+        """
+        Test with incoming cleaned data:
+        'showtime', 'start_datetime', 'screen'
+        """
+        cleaned_data = {
+            'showtime': self.showtime,
+            'start_datetime': self.start_datetime,
+            'screen': self.screen_blue,
+        }
+
+        result = helpers.parse_cleaned_data(cleaned_data)
+        self.assertIsInstance(result, tuple)
+        self.assertEqual(len(result), 5)
+        self.assertIsInstance(result[0], Film)
+        self.assertIsInstance(result[1], dt.datetime)
+        self.assertIsInstance(result[2], dt.date)
+        self.assertIsInstance(result[3], ScreenHall)
+        self.assertIsInstance(result[4], int)
+
+    def test_valid_data_with_film(self):
+        """
+        Test with incoming cleaned data:
+        'film', 'start_datetime', 'last_day', 'screen'
+        """
+        cleaned_data = {
+            'film': self.film_1_30,
+            'start_datetime': self.start_datetime,
+            'last_day': self.start_datetime.date(),
+            'screen': self.screen_blue,
+        }
+        result = helpers.parse_cleaned_data(cleaned_data)
+        self.assertIsInstance(result, tuple)
+        self.assertEqual(len(result), 5)
+        self.assertIsInstance(result[0], Film)
+        self.assertIsInstance(result[1], dt.datetime)
+        self.assertIsInstance(result[2], dt.date)
+        self.assertIsInstance(result[3], ScreenHall)
+        self.assertIsNone(result[4])
+
+    def test_missing_start_datetime(self):
+        """
+        Test with incoming cleaned data: 'showtime', 'screen'
+        and missing 'start_datetime'.
+        """
+        cleaned_data = {
+            'showtime': self.showtime,
+            'screen': self.screen_blue,
+        }
+        with self.assertRaises(KeyError):
+            helpers.parse_cleaned_data(cleaned_data)
+
+    def test_missing_screen(self):
+        """
+        Test with incoming cleaned data: 'showtime', 'start_datetime'
+        and missing 'screen'.
+        """
+        cleaned_data = {
+            'showtime': self.showtime,
+            'start_datetime': self.start_datetime,
+        }
+        with self.assertRaises(KeyError):
+            helpers.parse_cleaned_data(cleaned_data)
+
+    def test_missing_last_day(self):
+        """
+        Test with incoming cleaned data: 'film', 'start_datetime', 'screen'
+        and missing 'last_day'.
+        """
+        cleaned_data = {
+            'film': self.film_1_30,
+            'start_datetime': self.start_datetime,
+            'screen': self.screen_blue,
+        }
+        with self.assertRaises(KeyError):
+            helpers.parse_cleaned_data(cleaned_data)
+
+    def test_missing_showtime_and_film(self):
+        """
+        Test with incoming cleaned data: 'start_datetime', 'screen'
+        and missing 'showtime' and 'film'.
+        """
+        cleaned_data = {
+            'start_datetime': self.start_datetime,
+            'screen': self.screen_blue,
+        }
+        with self.assertRaises(KeyError):
+            helpers.parse_cleaned_data(cleaned_data)
+
+    def test_invalid_start_datetime_type(self):
+        """
+        Test with invalid type `start_datetime` value.
+        """
+        cleaned_data = {
+            'showtime': self.showtime,
+            'start_datetime': self.start_datetime.date(),  # invalid: must be dt.datetime
+            'screen': self.screen_blue,
+        }
+        with self.assertRaises(TypeError):
+            helpers.parse_cleaned_data(cleaned_data)
+
+    def test_invalid_last_day_type(self):
+        """
+        Test with invalid type `last_day` value.
+        """
+        cleaned_data = {
+            'film': self.film_1_30,
+            'start_datetime': self.start_datetime,
+            'last_day': self.start_datetime,  # invalid: must be dt.date
+            'screen': self.screen_blue,
+        }
+        with self.assertRaises(TypeError):
+            helpers.parse_cleaned_data(cleaned_data)
+
+    def test_invalid_screen_type(self):
+        """
+        Test with invalid type `screen` value.
+        """
+        cleaned_data = {
+            'film': self.film_1_30,
+            'start_datetime': self.start_datetime,
+            'last_day': self.start_datetime.date(),
+            'screen': self.film_1_30,  # invalid: must be ScreenHall
+        }
+        with self.assertRaises(TypeError):
+            helpers.parse_cleaned_data(cleaned_data)
+
+    def test_invalid_showtime_type(self):
+        """
+        Test with invalid type `showtime` value.
+        """
+        cleaned_data = {
+            'showtime': self.film_1_30,  # invalid: must be Showtime
+            'start_datetime': self.start_datetime,
+            'screen': self.screen_blue,
+        }
+        with self.assertRaises(TypeError):
+            helpers.parse_cleaned_data(cleaned_data)
+
+    def test_invalid_film_type(self):
+        """
+        Test with invalid type `film` value.
+        """
+        cleaned_data = {
+            'film': self.showtime,  # invalid: must be Film
+            'start_datetime': self.start_datetime,
+            'last_day': self.start_datetime.date(),
+            'screen': self.screen_blue,
+        }
+        with self.assertRaises(TypeError):
+            helpers.parse_cleaned_data(cleaned_data)
+
+
 class FindShowtimeIntersectionsTestCase(TestCase):
     """
     Test case for the `find_showtime_intersections` function.
@@ -128,8 +306,8 @@ class FindShowtimeIntersectionsTestCase(TestCase):
 
     def setUp(self):
         # **************************** Screen Set ******************************
-        self.screen_blue = ScreenCinema.objects.create(name='blue', capacity=50)
-        self.screen_green = ScreenCinema.objects.create(name='green', capacity=50)
+        self.screen_blue = ScreenHall.objects.create(name='blue', capacity=50)
+        self.screen_green = ScreenHall.objects.create(name='green', capacity=50)
 
         # ****************************** Film Set ******************************
         film_duration = dt.timedelta(hours=1.5)
