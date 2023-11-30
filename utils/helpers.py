@@ -158,12 +158,11 @@ def find_showtime_intersections(
 
     # Getting showtime ranges that are being created.
     # For each end of showtime, a technical break is added.
-    new_showtime_ranges_with_technical_break = list(
-        map(
-            lambda timerange: timerange._replace(end=timerange.end + technical_break),
-            get_timerange_new_showtimes(film.duration, start_datetime, last_day)
-        )
-    )
+    new_showtime_ranges_with_technical_break = [
+        timerange._replace(end=timerange.end + technical_break)
+        for timerange in get_timerange_new_showtimes(film.duration, start_datetime, last_day)
+    ]
+
     # From the ranges of showtimes,
     # a common list of the starts and ends of these showtimes is created.
     start_end_lst = list(chain.from_iterable(new_showtime_ranges_with_technical_break))
