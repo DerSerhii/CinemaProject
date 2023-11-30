@@ -8,6 +8,7 @@ from django.test import TestCase
 from django.utils import timezone as tz
 
 from utils import helpers
+from cinema_project import constants
 from cinema.models import ScreenHall, Film, Showtime
 
 
@@ -152,9 +153,9 @@ class TestParseCleanedData(TestCase):
         'showtime', 'start_datetime', 'screen'
         """
         cleaned_data = {
-            'showtime': self.showtime,
-            'start_datetime': self.start_datetime,
-            'screen': self.screen_blue,
+            constants.SHOWTIME: self.showtime,
+            constants.START_DATETIME: self.start_datetime,
+            constants.SCREEN: self.screen_blue,
         }
 
         result = helpers.parse_cleaned_data(cleaned_data)
@@ -172,10 +173,10 @@ class TestParseCleanedData(TestCase):
         'film', 'start_datetime', 'last_day', 'screen'
         """
         cleaned_data = {
-            'film': self.film_1_30,
-            'start_datetime': self.start_datetime,
-            'last_day': self.start_datetime.date(),
-            'screen': self.screen_blue,
+            constants.FILM: self.film_1_30,
+            constants.START_DATETIME: self.start_datetime,
+            constants.LAST_DAY: self.start_datetime.date(),
+            constants.SCREEN: self.screen_blue,
         }
         result = helpers.parse_cleaned_data(cleaned_data)
         self.assertIsInstance(result, tuple)
@@ -192,8 +193,8 @@ class TestParseCleanedData(TestCase):
         and missing 'start_datetime'.
         """
         cleaned_data = {
-            'showtime': self.showtime,
-            'screen': self.screen_blue,
+            constants.SHOWTIME: self.showtime,
+            constants.SCREEN: self.screen_blue,
         }
         with self.assertRaises(KeyError):
             helpers.parse_cleaned_data(cleaned_data)
@@ -204,8 +205,8 @@ class TestParseCleanedData(TestCase):
         and missing 'screen'.
         """
         cleaned_data = {
-            'showtime': self.showtime,
-            'start_datetime': self.start_datetime,
+            constants.SHOWTIME: self.showtime,
+            constants.START_DATETIME: self.start_datetime,
         }
         with self.assertRaises(KeyError):
             helpers.parse_cleaned_data(cleaned_data)
@@ -216,9 +217,9 @@ class TestParseCleanedData(TestCase):
         and missing 'last_day'.
         """
         cleaned_data = {
-            'film': self.film_1_30,
-            'start_datetime': self.start_datetime,
-            'screen': self.screen_blue,
+            constants.FILM: self.film_1_30,
+            constants.START_DATETIME: self.start_datetime,
+            constants.SCREEN: self.screen_blue,
         }
         with self.assertRaises(KeyError):
             helpers.parse_cleaned_data(cleaned_data)
@@ -229,8 +230,8 @@ class TestParseCleanedData(TestCase):
         and missing 'showtime' and 'film'.
         """
         cleaned_data = {
-            'start_datetime': self.start_datetime,
-            'screen': self.screen_blue,
+            constants.START_DATETIME: self.start_datetime,
+            constants.SCREEN: self.screen_blue,
         }
         with self.assertRaises(KeyError):
             helpers.parse_cleaned_data(cleaned_data)
@@ -240,9 +241,9 @@ class TestParseCleanedData(TestCase):
         Test with invalid type `start_datetime` value.
         """
         cleaned_data = {
-            'showtime': self.showtime,
-            'start_datetime': self.start_datetime.date(),  # invalid: must be dt.datetime
-            'screen': self.screen_blue,
+            constants.SHOWTIME: self.showtime,
+            constants.START_DATETIME: self.start_datetime.date(),  # invalid: must be dt.datetime
+            constants.SCREEN: self.screen_blue,
         }
         with self.assertRaises(TypeError):
             helpers.parse_cleaned_data(cleaned_data)
@@ -252,10 +253,10 @@ class TestParseCleanedData(TestCase):
         Test with invalid type `last_day` value.
         """
         cleaned_data = {
-            'film': self.film_1_30,
-            'start_datetime': self.start_datetime,
-            'last_day': self.start_datetime,  # invalid: must be dt.date
-            'screen': self.screen_blue,
+            constants.FILM: self.film_1_30,
+            constants.START_DATETIME: self.start_datetime,
+            constants.LAST_DAY: self.start_datetime,  # invalid: must be dt.date
+            constants.SCREEN: self.screen_blue,
         }
         with self.assertRaises(TypeError):
             helpers.parse_cleaned_data(cleaned_data)
@@ -265,10 +266,10 @@ class TestParseCleanedData(TestCase):
         Test with invalid type `screen` value.
         """
         cleaned_data = {
-            'film': self.film_1_30,
-            'start_datetime': self.start_datetime,
-            'last_day': self.start_datetime.date(),
-            'screen': self.film_1_30,  # invalid: must be ScreenHall
+            constants.FILM: self.film_1_30,
+            constants.START_DATETIME: self.start_datetime,
+            constants.LAST_DAY: self.start_datetime.date(),
+            constants.SCREEN: self.film_1_30,  # invalid: must be ScreenHall
         }
         with self.assertRaises(TypeError):
             helpers.parse_cleaned_data(cleaned_data)
@@ -278,9 +279,9 @@ class TestParseCleanedData(TestCase):
         Test with invalid type `showtime` value.
         """
         cleaned_data = {
-            'showtime': self.film_1_30,  # invalid: must be Showtime
-            'start_datetime': self.start_datetime,
-            'screen': self.screen_blue,
+            constants.SHOWTIME: self.film_1_30,  # invalid: must be Showtime
+            constants.START_DATETIME: self.start_datetime,
+            constants.SCREEN: self.screen_blue,
         }
         with self.assertRaises(TypeError):
             helpers.parse_cleaned_data(cleaned_data)
@@ -290,10 +291,10 @@ class TestParseCleanedData(TestCase):
         Test with invalid type `film` value.
         """
         cleaned_data = {
-            'film': self.showtime,  # invalid: must be Film
-            'start_datetime': self.start_datetime,
-            'last_day': self.start_datetime.date(),
-            'screen': self.screen_blue,
+            constants.FILM: self.showtime,  # invalid: must be Film
+            constants.START_DATETIME: self.start_datetime,
+            constants.LAST_DAY: self.start_datetime.date(),
+            constants.SCREEN: self.screen_blue,
         }
         with self.assertRaises(TypeError):
             helpers.parse_cleaned_data(cleaned_data)
