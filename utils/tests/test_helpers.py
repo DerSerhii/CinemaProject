@@ -307,25 +307,27 @@ class FindShowtimeIntersectionsTestCase(TestCase):
 
     def setUp(self):
         # **************************** Screen Set ******************************
-        self.screen_blue = ScreenHall.objects.create(name='blue', capacity=50)
-        self.screen_green = ScreenHall.objects.create(name='green', capacity=50)
+        self.screen_blue = ScreenHall.objects.create(name='blue', slug='blue', capacity=50)
+        self.screen_green = ScreenHall.objects.create(name='green', slug='green', capacity=50)
 
         # ****************************** Film Set ******************************
         film_duration = dt.timedelta(hours=1.5)
         # Film_No.1 [1:30]
         self.film_1_30 = Film.objects.create(
-            name='Test Film 1:30 hour',
+            title='Test Film 1:30 hour',
             description='Test Description',
             starring='Test Starring',
             director='Test Director',
+            release_year=2023,
             duration=film_duration
         )
         # Film_No.1 [2:00]
         self.film_2_00 = Film.objects.create(
-            name='Test Film 2:00 hour',
+            title='Test Film 2:00 hour',
             description='Test Description',
             starring='Test Starring',
             director='Test Director',
+            release_year=2023,
             duration=film_duration + dt.timedelta(minutes=30)
         )
 
@@ -364,10 +366,10 @@ class FindShowtimeIntersectionsTestCase(TestCase):
         )
 
         # *************************** Technical Break Set ******************************
-        self.technical_break_after_showtime_30 = utils.get_technical_break_after_showtime(
+        self.technical_break_after_showtime_30 = helpers.get_technical_break_after_showtime(
             dt.timedelta(minutes=30)
         )
-        self.technical_break_after_showtime_0 = utils.get_technical_break_after_showtime(
+        self.technical_break_after_showtime_0 = helpers.get_technical_break_after_showtime(
             dt.timedelta(minutes=0)
         )
 
@@ -380,13 +382,14 @@ class FindShowtimeIntersectionsTestCase(TestCase):
         * – with technical break after a showtime.
         Should not have showtime intersections.
         """
-        start_datetime = dt.datetime.fromisoformat('2023-01-01 03:00:00+02:00')
-        last_day = dt.date.fromisoformat('2023-01-01')
-        result = utils.find_showtime_intersections(
-            self.screen_blue,
-            self.film_1_30,
-            start_datetime,
-            last_day,
+        cleaned_form_data = {
+            constants.FILM: self.film_1_30,
+            constants.START_DATETIME: dt.datetime.fromisoformat('2023-01-01 03:00:00+02:00'),
+            constants.LAST_DAY: dt.date.fromisoformat('2023-01-01'),
+            constants.SCREEN: self.screen_blue,
+        }
+        result = helpers.find_showtime_intersections(
+            cleaned_form_data,
             self.technical_break_after_showtime_30
         )
         self.assertEqual([], result)
@@ -400,19 +403,21 @@ class FindShowtimeIntersectionsTestCase(TestCase):
         There must be an intersection.
         """
         start_datetime = self.start_datetime_sw1
-        last_day = dt.date.fromisoformat('2023-01-01')
-        result = utils.find_showtime_intersections(
-            self.screen_blue,
-            self.film_1_30,
-            start_datetime,
-            last_day,
+        cleaned_form_data = {
+            constants.FILM: self.film_1_30,
+            constants.START_DATETIME: start_datetime,
+            constants.LAST_DAY: dt.date.fromisoformat('2023-01-01'),
+            constants.SCREEN: self.screen_blue,
+        }
+        result = helpers.find_showtime_intersections(
+            cleaned_form_data,
             self.technical_break_after_showtime_30
         )
         expected_data = [
             (
                 start_datetime,
                 start_datetime + self.film_1_30.duration + self.technical_break_after_showtime_30,
-                self.film_1_30.name
+                self.film_1_30.title
             )
         ]
         self.assertEqual(expected_data, result)
@@ -426,12 +431,14 @@ class FindShowtimeIntersectionsTestCase(TestCase):
         There must be an intersection.
         """
         start_datetime = self.start_datetime_sw1
-        last_day = dt.date.fromisoformat('2023-01-01')
-        result = utils.find_showtime_intersections(
-            self.screen_blue,
-            self.film_2_00,
-            start_datetime,
-            last_day,
+        cleaned_form_data = {
+            constants.FILM: self.film_2_00,
+            constants.START_DATETIME: start_datetime,
+            constants.LAST_DAY: dt.date.fromisoformat('2023-01-01'),
+            constants.SCREEN: self.screen_blue,
+        }
+        result = helpers.find_showtime_intersections(
+            cleaned_form_data,
             self.technical_break_after_showtime_30
         )
         self.assertTrue(result)
@@ -439,7 +446,7 @@ class FindShowtimeIntersectionsTestCase(TestCase):
             (
                 start_datetime,
                 start_datetime + self.film_1_30.duration + self.technical_break_after_showtime_30,
-                self.film_1_30.name
+                self.film_1_30.title
             )
         ]
         self.assertEqual(expected_data, result)
@@ -453,12 +460,14 @@ class FindShowtimeIntersectionsTestCase(TestCase):
         There must be an intersection.
         """
         start_datetime = dt.datetime.fromisoformat('2023-01-01 02:00:00+02:00')
-        last_day = dt.date.fromisoformat('2023-01-01')
-        result = utils.find_showtime_intersections(
-            self.screen_blue,
-            self.film_1_30,
-            start_datetime,
-            last_day,
+        cleaned_form_data = {
+            constants.FILM: self.film_1_30,
+            constants.START_DATETIME: start_datetime,
+            constants.LAST_DAY: dt.date.fromisoformat('2023-01-01'),
+            constants.SCREEN: self.screen_blue,
+        }
+        result = helpers.find_showtime_intersections(
+            cleaned_form_data,
             self.technical_break_after_showtime_30
         )
         self.assertTrue(result)
@@ -466,7 +475,7 @@ class FindShowtimeIntersectionsTestCase(TestCase):
             (
                 self.start_datetime_sw1,
                 self.start_datetime_sw1 + self.film_1_30.duration + self.technical_break_after_showtime_30,
-                self.film_1_30.name
+                self.film_1_30.title
             )
         ]
         self.assertEqual(expected_data, result)
@@ -480,12 +489,14 @@ class FindShowtimeIntersectionsTestCase(TestCase):
         There must be an intersection.
         """
         start_datetime = dt.datetime.fromisoformat('2023-01-01 04:00:00+02:00')
-        last_day = dt.date.fromisoformat('2023-01-01')
-        result = utils.find_showtime_intersections(
-            self.screen_blue,
-            self.film_1_30,
-            start_datetime,
-            last_day,
+        cleaned_form_data = {
+            constants.FILM: self.film_1_30,
+            constants.START_DATETIME: start_datetime,
+            constants.LAST_DAY: dt.date.fromisoformat('2023-01-01'),
+            constants.SCREEN: self.screen_blue,
+        }
+        result = helpers.find_showtime_intersections(
+            cleaned_form_data,
             self.technical_break_after_showtime_30
         )
         self.assertTrue(result)
@@ -493,7 +504,7 @@ class FindShowtimeIntersectionsTestCase(TestCase):
             (
                 self.start_datetime_sw2,
                 self.start_datetime_sw2 + self.film_1_30.duration + self.technical_break_after_showtime_30,
-                self.film_1_30.name
+                self.film_1_30.title
             )
         ]
         self.assertEqual(expected_data, result)
@@ -507,12 +518,14 @@ class FindShowtimeIntersectionsTestCase(TestCase):
         There must be an intersection.
         """
         start_datetime = dt.datetime.fromisoformat('2022-12-31 23:00:00+02:00')
-        last_day = dt.date.fromisoformat('2022-12-31')
-        result = utils.find_showtime_intersections(
-            self.screen_blue,
-            self.film_2_00,
-            start_datetime,
-            last_day,
+        cleaned_form_data = {
+            constants.FILM: self.film_2_00,
+            constants.START_DATETIME: start_datetime,
+            constants.LAST_DAY: dt.date.fromisoformat('2022-12-31'),
+            constants.SCREEN: self.screen_blue,
+        }
+        result = helpers.find_showtime_intersections(
+            cleaned_form_data,
             self.technical_break_after_showtime_30
         )
         self.assertTrue(result)
@@ -520,7 +533,7 @@ class FindShowtimeIntersectionsTestCase(TestCase):
             (
                 self.start_datetime_sw1,
                 self.start_datetime_sw1 + self.film_1_30.duration + self.technical_break_after_showtime_30,
-                self.film_1_30.name
+                self.film_1_30.title
             )
         ]
         self.assertEqual(expected_data, result)
@@ -535,12 +548,14 @@ class FindShowtimeIntersectionsTestCase(TestCase):
         There must be two intersections.
         """
         start_datetime = dt.datetime.fromisoformat('2023-01-01 02:45:00+02:00')
-        last_day = dt.date.fromisoformat('2023-01-01')
-        result = utils.find_showtime_intersections(
-            self.screen_blue,
-            self.film_2_00,
-            start_datetime,
-            last_day,
+        cleaned_form_data = {
+            constants.FILM: self.film_2_00,
+            constants.START_DATETIME: start_datetime,
+            constants.LAST_DAY: dt.date.fromisoformat('2023-01-01'),
+            constants.SCREEN: self.screen_blue,
+        }
+        result = helpers.find_showtime_intersections(
+            cleaned_form_data,
             self.technical_break_after_showtime_30
         )
         self.assertEqual(2, len(result))
@@ -548,12 +563,12 @@ class FindShowtimeIntersectionsTestCase(TestCase):
             (
                 self.start_datetime_sw1,
                 self.start_datetime_sw1 + self.film_1_30.duration + self.technical_break_after_showtime_30,
-                self.film_1_30.name
+                self.film_1_30.title
             ),
             (
                 self.start_datetime_sw2,
                 self.start_datetime_sw2 + self.film_1_30.duration + self.technical_break_after_showtime_30,
-                self.film_1_30.name
+                self.film_1_30.title
             )
         ]
         self.assertEqual(expected_data, result)
@@ -570,12 +585,14 @@ class FindShowtimeIntersectionsTestCase(TestCase):
         There must be three intersections.
         """
         start_datetime = dt.datetime.fromisoformat('2023-01-01 02:00:00+02:00')
-        last_day = dt.date.fromisoformat('2023-01-03')
-        result = utils.find_showtime_intersections(
-            self.screen_blue,
-            self.film_1_30,
-            start_datetime,
-            last_day,
+        cleaned_form_data = {
+            constants.FILM: self.film_1_30,
+            constants.START_DATETIME: start_datetime,
+            constants.LAST_DAY: dt.date.fromisoformat('2023-01-03'),
+            constants.SCREEN: self.screen_blue,
+        }
+        result = helpers.find_showtime_intersections(
+            cleaned_form_data,
             self.technical_break_after_showtime_30
         )
         self.assertEqual(3, len(result))
@@ -583,17 +600,17 @@ class FindShowtimeIntersectionsTestCase(TestCase):
             (
                 self.start_datetime_sw1,
                 self.start_datetime_sw1 + self.film_1_30.duration + self.technical_break_after_showtime_30,
-                self.film_1_30.name
+                self.film_1_30.title
             ),
             (
                 self.start_datetime_sw1_2,
                 self.start_datetime_sw1_2 + self.film_1_30.duration + self.technical_break_after_showtime_30,
-                self.film_1_30.name
+                self.film_1_30.title
             ),
             (
                 self.start_datetime_sw1_3,
                 self.start_datetime_sw1_3 + self.film_1_30.duration + self.technical_break_after_showtime_30,
-                self.film_1_30.name
+                self.film_1_30.title
             )
         ]
         self.assertEqual(expected_data, result)
@@ -610,12 +627,14 @@ class FindShowtimeIntersectionsTestCase(TestCase):
         There must be three intersections.
         """
         start_datetime = dt.datetime.fromisoformat('2022-12-31 23:00:00+02:00')
-        last_day = dt.date.fromisoformat('2023-01-03')
-        result = utils.find_showtime_intersections(
-            self.screen_blue,
-            self.film_2_00,
-            start_datetime,
-            last_day,
+        cleaned_form_data = {
+            constants.FILM: self.film_2_00,
+            constants.START_DATETIME: start_datetime,
+            constants.LAST_DAY: dt.date.fromisoformat('2023-01-03'),
+            constants.SCREEN: self.screen_blue,
+        }
+        result = helpers.find_showtime_intersections(
+            cleaned_form_data,
             self.technical_break_after_showtime_30
         )
         self.assertEqual(3, len(result))
@@ -623,17 +642,17 @@ class FindShowtimeIntersectionsTestCase(TestCase):
             (
                 self.start_datetime_sw1,
                 self.start_datetime_sw1 + self.film_1_30.duration + self.technical_break_after_showtime_30,
-                self.film_1_30.name
+                self.film_1_30.title
             ),
             (
                 self.start_datetime_sw1_2,
                 self.start_datetime_sw1_2 + self.film_1_30.duration + self.technical_break_after_showtime_30,
-                self.film_1_30.name
+                self.film_1_30.title
             ),
             (
                 self.start_datetime_sw1_3,
                 self.start_datetime_sw1_3 + self.film_1_30.duration + self.technical_break_after_showtime_30,
-                self.film_1_30.name
+                self.film_1_30.title
             )
         ]
         self.assertEqual(expected_data, result)
@@ -648,12 +667,14 @@ class FindShowtimeIntersectionsTestCase(TestCase):
         Should not have showtime intersections.
         """
         start_datetime = self.start_datetime_sw1
-        last_day = dt.date.fromisoformat('2023-01-01')
-        result = utils.find_showtime_intersections(
-            self.screen_green,
-            self.film_1_30,
-            start_datetime,
-            last_day,
+        cleaned_form_data = {
+            constants.FILM: self.film_1_30,
+            constants.START_DATETIME: start_datetime,
+            constants.LAST_DAY: dt.date.fromisoformat('2023-01-01'),
+            constants.SCREEN: self.screen_green,
+        }
+        result = helpers.find_showtime_intersections(
+            cleaned_form_data,
             self.technical_break_after_showtime_30
         )
         self.assertEqual([], result)
@@ -667,12 +688,14 @@ class FindShowtimeIntersectionsTestCase(TestCase):
         Should not have showtime intersections.
         """
         start_datetime = dt.datetime.fromisoformat('2023-01-01 02:30:00+02:00')
-        last_day = dt.date.fromisoformat('2023-01-01')
-        result_1_30 = utils.find_showtime_intersections(
-            self.screen_blue,
-            self.film_1_30,
-            start_datetime,
-            last_day,
+        cleaned_form_data = {
+            constants.FILM: self.film_1_30,
+            constants.START_DATETIME: start_datetime,
+            constants.LAST_DAY: dt.date.fromisoformat('2023-01-01'),
+            constants.SCREEN: self.screen_blue,
+        }
+        result_1_30 = helpers.find_showtime_intersections(
+            cleaned_form_data,
             self.technical_break_after_showtime_0
         )
         self.assertEqual([], result_1_30)
