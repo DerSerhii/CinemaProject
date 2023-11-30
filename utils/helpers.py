@@ -8,6 +8,7 @@ from itertools import chain
 
 from django.utils import timezone as tz
 
+from cinema_project import constants
 from cinema.models import Showtime, ScreenHall, Film
 
 
@@ -83,51 +84,57 @@ def parse_cleaned_data(cleaned_data: dict) -> tuple:
     :raises:
     — ValueError: If the data does not meet the requirements or is incorrect.
     """
+    start_datetime_key = constants.START_DATETIME
+    screen_key = constants.SCREEN
+    showtime_key = constants.SHOWTIME
+    film_key = constants.FILM
+    last_day_key = constants.LAST_DAY
 
     # Parse and validate 'start_datetime'
-    if start_datetime := cleaned_data.get('start_datetime'):
+    if start_datetime := cleaned_data.get(start_datetime_key):
         if type(start_datetime) != dt.datetime:
             raise TypeError(
-                "'start_datetime' value must be instance <class 'datetime.datetime'>,"
+                f"'{start_datetime_key}' value must be instance <class 'datetime.datetime'>,"
                 f" not {type(start_datetime)}"
             )
     else:
-        raise KeyError("Missing required key 'start_datetime' in cleaned_data")
+        raise KeyError(f"Missing required key '{start_datetime_key}' in cleaned_data")
 
     # Parse and validate 'screen'
-    if screen := cleaned_data.get('screen'):
+    if screen := cleaned_data.get(screen_key):
         if not isinstance(screen, ScreenHall):
             raise TypeError(
-                f"'screen' value must be instance {type(ScreenHall())}, not {type(screen)}"
+                f"'{screen_key}' value must be instance {type(ScreenHall())}, not {type(screen)}"
             )
     else:
-        raise KeyError("Missing required key 'screen'")
+        raise KeyError(f"Missing required key '{screen_key}'")
 
     # Parse and validate 'showtime' or 'film'
-    if showtime := cleaned_data.get('showtime'):
+    if showtime := cleaned_data.get(showtime_key):
         if isinstance(showtime, Showtime):
             film = showtime.film
             pk = showtime.pk
             last_day = start_datetime.date()
         else:
             raise TypeError(
-                f"'showtime' value must be instance {type(Showtime())}, not {type(showtime)}"
+                f"'{showtime_key}' value must be instance {type(Showtime())}, not {type(showtime)}"
             )
-    elif film := cleaned_data.get('film'):
+    elif film := cleaned_data.get(film_key):
         if isinstance(film, Film):
             pk = None
             # Parse and validate 'last_day'
-            if last_day := cleaned_data.get('last_day'):
+            if last_day := cleaned_data.get(last_day_key):
                 if type(last_day) != dt.date:
                     raise TypeError(
-                        f"'last_day' value must be instance <class 'datetime.date'>, not {type(last_day)}"
+                        f"'{last_day_key}' value must be instance <class 'datetime.date'>, "
+                        f"not {type(last_day)}"
                     )
             else:
-                raise KeyError("Missing required key 'last_day'")
+                raise KeyError(f"Missing required key '{last_day_key}'")
         else:
-            raise TypeError(f"'film' value must be instance {type(Film())}, not {type(film)}")
+            raise TypeError(f"'{film_key}' value must be instance {type(Film())}, not {type(film)}")
     else:
-        raise KeyError("The cleaned data must contain the key 'showtime' or 'film'")
+        raise KeyError(f"The cleaned data must contain the key '{showtime_key}' or '{film_key}'")
 
     return film, start_datetime, last_day, screen, pk
 
@@ -146,19 +153,8 @@ def find_showtime_intersections(
     Attention!
     Intersections take into account the technical break after the showtime.
     """
-    pk = None
-    start_datetime: dt.datetime = cleaned_data.get('start_datetime')
-    screen: ScreenHall = cleaned_data.get('screen')
 
-    film: Film
-    if not (film := cleaned_data.get('film')):
-        showtime: Showtime = cleaned_data.get('instance')
-        film = showtime.film
-        pk = showtime.pk
-
-    last_day: dt.date
-    if not (last_day := cleaned_data.get('last_day')):
-        last_day = cleaned_data.get('release_day')
+    film, start_datetime, last_day, screen, pk = parse_cleaned_data(cleaned_data)
 
     # Getting showtime ranges that are being created.
     # For each end of showtime, a technical break is added.
