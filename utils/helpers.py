@@ -170,12 +170,12 @@ def find_showtime_intersections(
     queryset = Showtime.objects.filter(screen=screen).exclude(pk=pk).values_list(
         'start', 'end', 'film__title'
     )
-    existing_showtime_ranges = list(map(lambda ft_range: FilmTimeRange._make(ft_range), queryset))
+    existing_showtime_ranges = map(lambda ft_range: FilmTimeRange._make(ft_range), queryset)
 
     intersections = []
     for esh_range in existing_showtime_ranges:
         # Converting an aware datetime to local time, since Postgres always returns datetime in UTC.
-        start, end = tuple(map(lambda r: tz.localtime(r), (esh_range.start, esh_range.end)))
+        start, end = map(lambda r: tz.localtime(r), (esh_range.start, esh_range.end))
         # A technical break is added.
         end += technical_break
         if any(start <= start_end <= end for start_end in start_end_lst):
