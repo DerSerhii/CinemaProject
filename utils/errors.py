@@ -41,10 +41,7 @@ def has_error_last_day_distribution(start: dt.date, last: dt.date) -> str | None
 
 
 def has_error_intersection_with_existing_showtimes(
-        screen: ScreenHall,
-        film: Film,
-        start_datetime: dt.datetime,
-        last_day: dt.date,
+        cleaned_form_data: dict,
         technical_break: dt.timedelta,
         show_error: int = 5) -> str | None:
     """
@@ -56,7 +53,7 @@ def has_error_intersection_with_existing_showtimes(
 
     If there is no error, returns `None`.
     """
-    intersections = find_showtime_intersections(screen, film, start_datetime, last_day, technical_break)
+    intersections = find_showtime_intersections(cleaned_form_data, technical_break)
     quantity_intersections = len(intersections)
 
     if intersections:
@@ -75,11 +72,11 @@ def has_error_intersection_with_existing_showtimes(
                                f'({technical_break.seconds // 60 + 1} min) after a showtime.')
 
             error_message += (
-                _(f'{i}. {start}–{end}{break_mark} "{intersect.film_name}"{punctuation_mark}\n')
+                _(f'{i})    {start}–{end}{break_mark} "{intersect.film_name}"{punctuation_mark}\n')
             )
 
             if i >= show_error and i != quantity_intersections:
-                error_message += _(f"... and other {quantity_intersections - i} intersection(s).\n")
+                error_message += _(f'... and other {quantity_intersections - i} intersection(s).\n')
                 break
 
         error_message += break_note
