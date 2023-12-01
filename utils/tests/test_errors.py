@@ -8,8 +8,9 @@ from django.test import TestCase
 from django.utils import timezone as tz
 from django.utils.translation import gettext as _
 
-import utils
-from cinema.models import ScreenCinema, Film, Showtime
+from utils import errors, helpers
+from cinema_project import constants
+from cinema.models import ScreenHall, Film, Showtime
 
 
 class HasErrorShowtimeStartTestCase(TestCase):
@@ -88,25 +89,27 @@ class HasErrorIntersectionWithExistingShowtimesTestCase(TestCase):
         self.maxDiff = None
 
         # **************************** Screen Set ******************************
-        self.screen_blue = ScreenCinema.objects.create(name='blue', capacity=50)
-        self.screen_green = ScreenCinema.objects.create(name='green', capacity=50)
+        self.screen_blue = ScreenHall.objects.create(name='blue', slug='blue', capacity=50)
+        self.screen_green = ScreenHall.objects.create(name='green', slug='green', capacity=50)
 
         # ****************************** Film Set ******************************
         film_duration = dt.timedelta(hours=1.5)
         # Film_No.1 [1:30]
         self.film_1_30 = Film.objects.create(
-            name='Test Film 1:30 hour',
+            title='Test Film 1:30 hour',
             description='Test Description',
             starring='Test Starring',
             director='Test Director',
+            release_year=2023,
             duration=film_duration
         )
         # Film_No.1 [2:00]
         self.film_2_00 = Film.objects.create(
-            name='Test Film 2:00 hour',
+            title='Test Film 2:00 hour',
             description='Test Description',
             starring='Test Starring',
             director='Test Director',
+            release_year=2023,
             duration=film_duration + dt.timedelta(minutes=30)
         )
 
@@ -130,13 +133,13 @@ class HasErrorIntersectionWithExistingShowtimesTestCase(TestCase):
         )
 
         # *************************** Technical Break Set ******************************
-        self.technical_break_after_showtime_30 = utils.get_technical_break_after_showtime(
+        self.technical_break_after_showtime_30 = helpers.get_technical_break_after_showtime(
             dt.timedelta(minutes=30)
         )
-        self.technical_break_after_showtime_1 = utils.get_technical_break_after_showtime(
+        self.technical_break_after_showtime_1 = helpers.get_technical_break_after_showtime(
             dt.timedelta(minutes=1)
         )
-        self.technical_break_after_showtime_0 = utils.get_technical_break_after_showtime(
+        self.technical_break_after_showtime_0 = helpers.get_technical_break_after_showtime(
             dt.timedelta(minutes=0)
         )
 
@@ -148,13 +151,14 @@ class HasErrorIntersectionWithExistingShowtimesTestCase(TestCase):
         * – with technical break after a showtime.
         Should return `None`.
         """
-        start_datetime = dt.datetime.fromisoformat('2023-01-01 03:00:00+02:00')
-        last_day = dt.date.fromisoformat('2023-01-01')
-        result = utils.has_error_intersection_with_existing_showtimes(
-            self.screen_blue,
-            self.film_1_30,
-            start_datetime,
-            last_day,
+        cleaned_form_data = {
+            constants.FILM: self.film_1_30,
+            constants.START_DATETIME: dt.datetime.fromisoformat('2023-01-01 03:00:00+02:00'),
+            constants.LAST_DAY: dt.date.fromisoformat('2023-01-01'),
+            constants.SCREEN: self.screen_blue,
+        }
+        result = errors.has_error_intersection_with_existing_showtimes(
+            cleaned_form_data,
             self.technical_break_after_showtime_30
         )
         self.assertIsNone(result)
@@ -167,20 +171,21 @@ class HasErrorIntersectionWithExistingShowtimesTestCase(TestCase):
         * – with technical break after a showtime.
         Should return an error message.
         """
-        start_datetime = dt.datetime.fromisoformat('2023-01-01 02:00:00+02:00')
-        last_day = dt.date.fromisoformat('2023-01-01')
-        result = utils.has_error_intersection_with_existing_showtimes(
-            self.screen_blue,
-            self.film_1_30,
-            start_datetime,
-            last_day,
+        cleaned_form_data = {
+            constants.FILM: self.film_1_30,
+            constants.START_DATETIME: dt.datetime.fromisoformat('2023-01-01 02:00:00+02:00'),
+            constants.LAST_DAY: dt.date.fromisoformat('2023-01-01'),
+            constants.SCREEN: self.screen_blue,
+        }
+        result = errors.has_error_intersection_with_existing_showtimes(
+            cleaned_form_data,
             self.technical_break_after_showtime_30
         )
         expected_message = _('The film distribution that is being created '
-                         'has 1 intersection(s) with existing showtimes:\n'
-                         '1. 1 Jan 1:00–2:59* "Test Film 1:30 hour".\n'
-                         ' * Attention! Intersections take into account '
-                         'the technical break (30 min) after a showtime.')
+                             'has 1 intersection(s) with existing showtimes:\n'
+                             '1) 1 Jan 1:00–2:59* "Test Film 1:30 hour".\n'
+                             ' * Attention! Intersections take into account '
+                             'the technical break (30 min) after a showtime.')
         self.assertEqual(expected_message, result)
 
     def test_has_five_intersections(self):
@@ -193,24 +198,25 @@ class HasErrorIntersectionWithExistingShowtimesTestCase(TestCase):
         [05/01 2:00-4:00*) << new test showtime No.5t being created
         Should return an error message.
         """
-        start_datetime = dt.datetime.fromisoformat('2023-01-01 02:00:00+02:00')
-        last_day = dt.date.fromisoformat('2023-01-05')
-        result = utils.has_error_intersection_with_existing_showtimes(
-            self.screen_blue,
-            self.film_1_30,
-            start_datetime,
-            last_day,
+        cleaned_form_data = {
+            constants.FILM: self.film_1_30,
+            constants.START_DATETIME: dt.datetime.fromisoformat('2023-01-01 02:00:00+02:00'),
+            constants.LAST_DAY: dt.date.fromisoformat('2023-01-05'),
+            constants.SCREEN: self.screen_blue,
+        }
+        result = errors.has_error_intersection_with_existing_showtimes(
+            cleaned_form_data,
             self.technical_break_after_showtime_30
         )
         expected_message = _('The film distribution that is being created '
-                          'has 5 intersection(s) with existing showtimes:\n'
-                          '1. 1 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
-                          '2. 2 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
-                          '3. 3 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
-                          '4. 4 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
-                          '5. 5 Jan 1:00–2:59* "Test Film 1:30 hour".\n'
-                          ' * Attention! Intersections take into account '
-                          'the technical break (30 min) after a showtime.')
+                             'has 5 intersection(s) with existing showtimes:\n'
+                             '1) 1 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
+                             '2) 2 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
+                             '3) 3 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
+                             '4) 4 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
+                             '5) 5 Jan 1:00–2:59* "Test Film 1:30 hour".\n'
+                             ' * Attention! Intersections take into account '
+                             'the technical break (30 min) after a showtime.')
         self.assertEqual(expected_message, result)
 
     def test_has_ten_intersections(self):
@@ -223,22 +229,23 @@ class HasErrorIntersectionWithExistingShowtimesTestCase(TestCase):
         [10/01 2:00-4:00*) << new test showtime No.10t being created
         Should return an error message.
         """
-        start_datetime = dt.datetime.fromisoformat('2023-01-01 02:00:00+02:00')
-        last_day = dt.date.fromisoformat('2023-01-10')
-        result = utils.has_error_intersection_with_existing_showtimes(
-            self.screen_blue,
-            self.film_1_30,
-            start_datetime,
-            last_day,
+        cleaned_form_data = {
+            constants.FILM: self.film_1_30,
+            constants.START_DATETIME: dt.datetime.fromisoformat('2023-01-01 02:00:00+02:00'),
+            constants.LAST_DAY: dt.date.fromisoformat('2023-01-10'),
+            constants.SCREEN: self.screen_blue,
+        }
+        result = errors.has_error_intersection_with_existing_showtimes(
+            cleaned_form_data,
             self.technical_break_after_showtime_30
         )
         expected_message = _('The film distribution that is being created '
                              'has 10 intersection(s) with existing showtimes:\n'
-                             '1. 1 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
-                             '2. 2 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
-                             '3. 3 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
-                             '4. 4 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
-                             '5. 5 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
+                             '1) 1 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
+                             '2) 2 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
+                             '3) 3 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
+                             '4) 4 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
+                             '5) 5 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
                              '... and other 5 intersection(s).\n'
                              ' * Attention! Intersections take into account '
                              'the technical break (30 min) after a showtime.')
@@ -256,22 +263,23 @@ class HasErrorIntersectionWithExistingShowtimesTestCase(TestCase):
         [10/01/2023 2:00-4:00*) << new test showtime No.10t being created
         Should return an error message.
         """
-        start_datetime = dt.datetime.fromisoformat('2022-12-31 02:00:00+02:00')
-        last_day = dt.date.fromisoformat('2023-01-05')
-        result = utils.has_error_intersection_with_existing_showtimes(
-            self.screen_blue,
-            self.film_1_30,
-            start_datetime,
-            last_day,
+        cleaned_form_data = {
+            constants.FILM: self.film_1_30,
+            constants.START_DATETIME: dt.datetime.fromisoformat('2022-12-31 02:00:00+02:00'),
+            constants.LAST_DAY: dt.date.fromisoformat('2023-01-05'),
+            constants.SCREEN: self.screen_blue,
+        }
+        result = errors.has_error_intersection_with_existing_showtimes(
+            cleaned_form_data,
             self.technical_break_after_showtime_30
         )
         expected_message = _('The film distribution that is being created '
                              'has 6 intersection(s) with existing showtimes:\n'
-                             '1. 31 Dec 1:00–3:29* "Test Film 2:00 hour",\n'
-                             '2. 1 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
-                             '3. 2 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
-                             '4. 3 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
-                             '5. 4 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
+                             '1) 31 Dec 1:00–3:29* "Test Film 2:00 hour",\n'
+                             '2) 1 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
+                             '3) 2 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
+                             '4) 3 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
+                             '5) 4 Jan 1:00–2:59* "Test Film 1:30 hour",\n'
                              '... and other 1 intersection(s).\n'
                              ' * Attention! Intersections take into account '
                              'the technical break (30 min) after a showtime.')
@@ -286,13 +294,14 @@ class HasErrorIntersectionWithExistingShowtimesTestCase(TestCase):
         * – with technical break after a showtime.
         Should return `None`.
         """
-        start_datetime = dt.datetime.fromisoformat('2023-01-01 01:00:00+02:00')
-        last_day = dt.date.fromisoformat('2023-01-01')
-        result = utils.has_error_intersection_with_existing_showtimes(
-            self.screen_green,
-            self.film_1_30,
-            start_datetime,
-            last_day,
+        cleaned_form_data = {
+            constants.FILM: self.film_1_30,
+            constants.START_DATETIME: dt.datetime.fromisoformat('2023-01-01 01:00:00+02:00'),
+            constants.LAST_DAY: dt.date.fromisoformat('2023-01-01'),
+            constants.SCREEN: self.screen_green,
+        }
+        result = errors.has_error_intersection_with_existing_showtimes(
+            cleaned_form_data,
             self.technical_break_after_showtime_30
         )
         self.assertIsNone(result)
@@ -302,13 +311,14 @@ class HasErrorIntersectionWithExistingShowtimesTestCase(TestCase):
         The technical break after a showtime equal 3O minutes.
         The error message must include `(30 min)`.
         """
-        start_datetime = dt.datetime.fromisoformat('2023-01-01 02:00:00+02:00')
-        last_day = dt.date.fromisoformat('2023-01-01')
-        result = utils.has_error_intersection_with_existing_showtimes(
-            self.screen_blue,
-            self.film_1_30,
-            start_datetime,
-            last_day,
+        cleaned_form_data = {
+            constants.FILM: self.film_1_30,
+            constants.START_DATETIME: dt.datetime.fromisoformat('2023-01-01 02:00:00+02:00'),
+            constants.LAST_DAY: dt.date.fromisoformat('2023-01-01'),
+            constants.SCREEN: self.screen_blue,
+        }
+        result = errors.has_error_intersection_with_existing_showtimes(
+            cleaned_form_data,
             self.technical_break_after_showtime_30
         )
         expected_phrase = _('technical break (30 min)')
@@ -319,13 +329,14 @@ class HasErrorIntersectionWithExistingShowtimesTestCase(TestCase):
         The technical break after a showtime equal 1 minute.
         The error message must include `(1 min)`.
         """
-        start_datetime = dt.datetime.fromisoformat('2023-01-01 02:00:00+02:00')
-        last_day = dt.date.fromisoformat('2023-01-01')
-        result = utils.has_error_intersection_with_existing_showtimes(
-            self.screen_blue,
-            self.film_1_30,
-            start_datetime,
-            last_day,
+        cleaned_form_data = {
+            constants.FILM: self.film_1_30,
+            constants.START_DATETIME: dt.datetime.fromisoformat('2023-01-01 02:00:00+02:00'),
+            constants.LAST_DAY: dt.date.fromisoformat('2023-01-01'),
+            constants.SCREEN: self.screen_blue,
+        }
+        result = errors.has_error_intersection_with_existing_showtimes(
+            cleaned_form_data,
             self.technical_break_after_showtime_1
         )
         expected_phrase = _('technical break (1 min)')
@@ -336,13 +347,14 @@ class HasErrorIntersectionWithExistingShowtimesTestCase(TestCase):
         The technical break after a showtime equal 0 (zero) minutes.
         The error message must include `(0 min)`.
         """
-        start_datetime = dt.datetime.fromisoformat('2023-01-01 02:00:00+02:00')
-        last_day = dt.date.fromisoformat('2023-01-01')
-        result = utils.has_error_intersection_with_existing_showtimes(
-            self.screen_blue,
-            self.film_1_30,
-            start_datetime,
-            last_day,
+        cleaned_form_data = {
+            constants.FILM: self.film_1_30,
+            constants.START_DATETIME: dt.datetime.fromisoformat('2023-01-01 02:00:00+02:00'),
+            constants.LAST_DAY: dt.date.fromisoformat('2023-01-01'),
+            constants.SCREEN: self.screen_blue,
+        }
+        result = errors.has_error_intersection_with_existing_showtimes(
+            cleaned_form_data,
             self.technical_break_after_showtime_0
         )
         not_expected_phrase = _('* Attention! Intersections take into account the technical break')
@@ -362,20 +374,21 @@ class HasErrorIntersectionWithExistingShowtimesTestCase(TestCase):
         At the same time, the argument `show_error` was passed 3.
         Should return an error message with three showtimes.
         """
-        start_datetime = dt.datetime.fromisoformat('2023-01-01 02:00:00+02:00')
-        last_day = dt.date.fromisoformat('2023-01-05')
-        result = utils.has_error_intersection_with_existing_showtimes(
-            self.screen_blue,
-            self.film_1_30,
-            start_datetime,
-            last_day,
+        cleaned_form_data = {
+            constants.FILM: self.film_1_30,
+            constants.START_DATETIME: dt.datetime.fromisoformat('2023-01-01 02:00:00+02:00'),
+            constants.LAST_DAY: dt.date.fromisoformat('2023-01-05'),
+            constants.SCREEN: self.screen_blue,
+        }
+        result = errors.has_error_intersection_with_existing_showtimes(
+            cleaned_form_data,
             self.technical_break_after_showtime_0,
             show_error=3
         )
         expected_message = _('The film distribution that is being created '
-                          'has 5 intersection(s) with existing showtimes:\n'
-                          '1. 1 Jan 1:00–2:29 "Test Film 1:30 hour",\n'
-                          '2. 2 Jan 1:00–2:29 "Test Film 1:30 hour",\n'
-                          '3. 3 Jan 1:00–2:29 "Test Film 1:30 hour",\n'
-                          '... and other 2 intersection(s).\n')
+                             'has 5 intersection(s) with existing showtimes:\n'
+                             '1) 1 Jan 1:00–2:29 "Test Film 1:30 hour",\n'
+                             '2) 2 Jan 1:00–2:29 "Test Film 1:30 hour",\n'
+                             '3) 3 Jan 1:00–2:29 "Test Film 1:30 hour",\n'
+                             '... and other 2 intersection(s).\n')
         self.assertEqual(expected_message, result)

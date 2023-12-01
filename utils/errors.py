@@ -72,7 +72,7 @@ def has_error_intersection_with_existing_showtimes(
                                f'({technical_break.seconds // 60 + 1} min) after a showtime.')
 
             error_message += (
-                _(f'{i})    {start}–{end}{break_mark} "{intersect.film_name}"{punctuation_mark}\n')
+                _(f'{i}) {start}–{end}{break_mark} "{intersect.film_name}"{punctuation_mark}\n')
             )
 
             if i >= show_error and i != quantity_intersections:
