@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_extensions',
 
+    'channels',
     'rest_framework',
     'rest_framework.authtoken',
     'debug_toolbar',
@@ -105,6 +106,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'cinema_project.wsgi.application'
+ASGI_APPLICATION = 'cinema_project.asgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
