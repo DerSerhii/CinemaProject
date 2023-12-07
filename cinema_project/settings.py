@@ -33,28 +33,15 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-        },
-    },
-    'loggers': {
-        'django.db.backends': {
-            # 'level': 'DEBUG',
-            'handlers': ['console'],
-        },
-    },
-}
-
 ALLOWED_HOSTS = []
 
 AUTH_USER_MODEL = 'cinema_admin.CinemaUser'
 
 # Application definition
 INSTALLED_APPS = [
+    'daphne',
+    'channels',
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -63,14 +50,14 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_extensions',
 
-    'channels',
     'rest_framework',
     'rest_framework.authtoken',
     'debug_toolbar',
 
+    'cinema',
     'cinema_admin',
     'api',
-    'cinema',
+    'sockets',
 ]
 
 MIDDLEWARE = [
@@ -105,7 +92,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'cinema_project.wsgi.application'
+# WSGI_APPLICATION = 'cinema_project.wsgi.application'
 ASGI_APPLICATION = 'cinema_project.asgi.application'
 
 # Database
@@ -237,4 +224,20 @@ SWAGGER_SETTINGS = {
         }
     },
     'USE_SESSION_AUTH': False,
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django.db.backends': {
+            # 'level': 'DEBUG',
+            'handlers': ['console'],
+        },
+    },
 }

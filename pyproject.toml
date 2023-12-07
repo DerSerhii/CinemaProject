@@ -12,6 +12,7 @@ python-dotenv = "^1.0.0"
 djangorestframework-simplejwt = "^5.3.0"
 django-filter = "^23.4"
 channels = "^4.0.0"
+daphne = "^4.0.0"
 
 
 [tool.poetry.group.dev.dependencies]
