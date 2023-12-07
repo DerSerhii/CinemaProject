@@ -5,6 +5,7 @@ from django.utils import timezone as tz
 from django.utils.translation import gettext as _
 
 import utils
+from cinema_project import constants
 from cinema.models import ScreenHall, Showtime, Film
 from cinema_admin.models import CinemaUser, UserRole
 
@@ -34,31 +35,25 @@ class AdminCinemaUserForm(forms.ModelForm):
         return user
 
 
-class FilmDistributionCreationForm(forms.Form):
+class ShowtimeFormMixin(forms.Form):
     """
-    This object represents a form for creating a film distribution
-    (single showtime or cycle of showtime that start at a certain time).
+    A mixin for creating a form related to Showtime model.
+
+    This mixin includes form fields:
+        — `release_day` (forms.DateField): A field for selecting the release day.
+        — `start_hour` (forms.IntegerField): A field for entering the start hour.
+        — `start_minute` (forms.IntegerField): A field for entering the start minute.
+        — `screen` (forms.ModelChoiceField): A field for selecting the screen.
+        — `price` (forms.DecimalField): A field for entering the ticket price.
+    It provides default values and widgets for these fields.
     """
-    film = forms.ModelChoiceField(
-        queryset=Film.objects.filter(is_active=True),
-        empty_label=_('= select ='),
-        widget=forms.Select(attrs={'class': 'form-input-film'}),
-        label=_('Film')
-    )
+
     release_day = forms.DateField(
         widget=forms.SelectDateWidget(
             attrs={'class': 'form-input-date-screen'},
             years=utils.derive_range_years()
         ),
         label=_('Release day'),
-        initial=tz.localdate()
-    )
-    last_day = forms.DateField(
-        widget=forms.SelectDateWidget(
-            attrs={'class': 'form-input-date-screen'},
-            years=utils.derive_range_years()
-        ),
-        label=_('Last day'),
         initial=tz.localdate()
     )
     start_hour = forms.IntegerField(
@@ -97,9 +92,42 @@ class FilmDistributionCreationForm(forms.Form):
         min_value=0,
     )
 
+
+class FilmDistributionCreationForm(ShowtimeFormMixin, forms.Form):
+    """
+    Form class for creating a film distribution
+    (single showtime or cycle of showtime that start at a certain time).
+    Creates `Showtime` instances.
+    """
+    film = forms.ModelChoiceField(
+        queryset=Film.objects.filter(is_active=True),
+        empty_label=_('= select ='),
+        widget=forms.Select(attrs={'class': 'form-input-film'}),
+        label=_('Film')
+    )
+    last_day = forms.DateField(
+        widget=forms.SelectDateWidget(
+            attrs={'class': 'form-input-date-screen'},
+            years=utils.derive_range_years()
+        ),
+        label=_('Last day'),
+        initial=tz.localdate()
+    )
+
+    field_order = (
+        'film',
+        'release_day',
+        'last_day',
+        'start_hour',
+        'start_minute',
+        'screen',
+        'price'
+    )
+
     def clean(self) -> dict | None:
         """
         Hook for doing extra form-wide cleaning.
+        Validates the form data and return the cleaned data.
 
         If the release day of film distribution is less than today,
         then an error will be raised to the field `release_day`.
@@ -122,12 +150,12 @@ class FilmDistributionCreationForm(forms.Form):
         Method for creating a film distribution (cycle of showtime or single showtime).
         Use if the form is validated.
         """
-        film: Film = self.cleaned_data['film']
-        release_day: dt.date = self.cleaned_data['release_day']
-        last_day: dt.date = self.cleaned_data['last_day']
-        start_datetime: dt.datetime = self.cleaned_data['start_datetime']
-        screen: ScreenHall = self.cleaned_data['screen']
-        price = self.cleaned_data['price']
+        film: Film = self.cleaned_data.get(constants.FILM)
+        release_day: dt.date = self.cleaned_data.get(constants.RELEASE_DAY)
+        last_day: dt.date = self.cleaned_data.get(constants.LAST_DAY)
+        start_datetime: dt.datetime = self.cleaned_data.get(constants.START_DATETIME)
+        screen: ScreenHall = self.cleaned_data.get(constants.SCREEN)
+        price = self.cleaned_data.get(constants.PRICE)
 
         bulk_showtime = []
         for day in range((last_day - release_day).days + 1):
@@ -139,41 +167,62 @@ class FilmDistributionCreationForm(forms.Form):
         Showtime.objects.bulk_create(bulk_showtime)
 
 
-class ShowtimeEditForm(forms.ModelForm):
-    date = forms.DateField(widget=forms.SelectDateWidget,
-                           label=_("Showtime date"))
+class ShowtimeEditForm(ShowtimeFormMixin, forms.ModelForm):
+    """
+    Form class for editing `Showtime` instances.
+    """
 
     class Meta:
         model = Showtime
-        fields = ("date", "start", "film", "screen", "price")
-
-    def __init__(self, showtime_id, attendance, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.showtime_id = showtime_id
-        self.attendance = attendance
+        fields = ('release_day', 'start_hour', 'start_minute', 'screen', 'price')
 
     def clean(self):
-        cleaned_data = super().clean()
-        date = cleaned_data["date"]
-        time_start = cleaned_data["time_start"]
-        screen = cleaned_data["screen"]
+        """
+        Validates the form data and return the cleaned data.
 
-        if self.attendance:
-            message = f"Editing is no longer available!" \
-                      f" {self.attendance} tickets sold per showtime"
-            raise forms.ValidationError(message)
+        This method performs additional validation using the `ShowtimeValidator`
+        and updates the cleaned data with the `constants.SHOWTIME` key pointing to
+        the instance.
 
-        overlapping_showtime = get_overlapping_showtime(cleaned_data)
-        if overlapping_showtime.exclude(id=self.showtime_id):
-            raise forms.ValidationError("Showtime overlay")
+        If the release day of showtime is less than today,
+        then an error will be raised to the field `release_day`.
+
+        If the last day of showtime is earlier than the release day,
+        then an error will be raised to the field `last_day`.
+
+        If the start time of showtime is less than the current moment,
+        then ah error will be raised to the filed `start_minute`.
+
+        If showtime that is being created has intersections
+        with existing showtimes, an error will be raised.
+        """
+        cleaned_data: dict = super().clean()
+        cleaned_data.update(
+            {constants.SHOWTIME: self.instance}
+        )
+        validator = utils.ShowtimeValidator(cleaned_data)
+        return validator.data
 
     def save(self, commit=True):
-        form = super().save(commit=False)
+        """
+        Saves `Showtime` instance to the database.
 
-        form.time_end = get_time_end_showtime(form.start_time, form.film_1_30.duration)
+        This method overrides the default `save` behavior to set the `start` and `end`
+        attributes of the `Showtime` instance based on the cleaned data.
+
+        :returns: The saved `Showtime` instance.
+        """
+        showtime = super().save(commit=False)
+
+        start_datetime: dt.datetime = self.cleaned_data.get(constants.START_DATETIME)
+        showtime.start = start_datetime
+        showtime.end = start_datetime + showtime.film.duration
+
         if commit:
-            form.save()
-        return form
+            showtime.save()
+
+        return showtime
+
 
 class ScreenField(forms.CharField):
     def to_python(self, value):
@@ -186,4 +235,4 @@ class ScreenForm(forms.ModelForm):
 
     class Meta:
         model = ScreenHall
-        fields = ("name", "capacity")
+        fields = ('name', 'capacity')
