@@ -3,15 +3,15 @@
         <div class="container">
 
             {# LEFT PART OF THE HEADER #}
-            <a class="navbar-icon" href="{% url 'screen-showtime' 0 %}">
+            <a class="navbar-icon" href="{% url 'admin-home' %}">
                 <span class="text-1">ADMIN</span>
                 <span class="text-2">cinema</span>
             </a>
 
             {# CENTRAL PART OF THE HEADER #}
             <div class="navbar-info">
-                <p class="ml-auto" >
-                    <a class="navbar-link pad-link" href="{% url 'screen-showtime' 0 %}">
+                <p class="ml-auto">
+                    <a class="navbar-link pad-link" href="{% url 'admin-showtimes' 'all' %}">
                         Schedule
                     </a>
                     <a class="navbar-link pad-link" href="{% url 'film' %}">
@@ -34,11 +34,8 @@
                             Sign out
                         </a>
                     </li>
-
                 </ul>
             </div>
         </div>
     </nav>
-
-
 </header>
